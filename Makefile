@@ -20,13 +20,18 @@ CLOSURE_COMMAND = java -jar $(CLOSURE_JAR) \
 --module utils:1:constants \
   --js ./src/js/AccessibilityUtils.js \
 --module content:1:axs \
-  --js ./src/js/ContentScriptFramework.js \
 --module properties:1:utils,constants,content \
   --js ./src/js/Properties.js \
 --module audits:$(NUM_AUDIT_RULE_SOURCES):content,constants,utils \
   --js ./src/js/AuditRule.js \
   --js ./src/js/AuditRules.js \
-  --js $(AUDIT_RULES) 
+  --js $(AUDIT_RULES) \
+--module extension:4:audits,properties \
+  --js ./src/extension/base.js \
+  --js ./src/js/ContentScriptFramework.js \
+  --js ./src/extension/ExtensionAuditRule.js \
+  --js ./src/extension/ExtensionAuditRules.js \
+  --js ./src/extension/ExtensionProperties.js
 
 MODULES = axs constants utils content properties audits
 

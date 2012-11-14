@@ -16,7 +16,7 @@ goog.require('axs.AuditRules');
 goog.require('axs.constants.Severity');
 goog.require('axs.utils');
 
-axs.AuditRules.addRule({
+axs.AuditRule.specs.controlsWithoutLabel = {
     name: 'controlsWithoutLabel',
     severity: axs.constants.Severity.Severe,
     relevantNodesSelector: function(scope) {
@@ -41,4 +41,4 @@ axs.AuditRules.addRule({
     },
     code: 'AX_TEXT_01',
     ruleName: 'Controls and media elements should have labels'
-});
+};

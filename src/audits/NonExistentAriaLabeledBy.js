@@ -15,7 +15,7 @@
 goog.require('axs.AuditRules');
 goog.require('axs.constants.Severity');
 
-axs.AuditRules.addRule({
+axs.AuditRule.specs.nonExistentAriaLabelledbyElement = {
     name: 'nonExistentAriaLabelledbyElement',
     severity: axs.constants.Severity.Warning,
     relevantNodesSelector: function(scope) {
@@ -32,4 +32,4 @@ axs.AuditRules.addRule({
         return false;
     },
     code: 'AX_ARIA_02'
-});
+};

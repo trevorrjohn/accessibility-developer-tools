@@ -15,7 +15,7 @@
 goog.require('axs.AuditRules');
 goog.require('axs.utils');
 
-axs.AuditRules.addRule({
+axs.AuditRule.specs.badAriaRole = {
     name: 'badAriaRole',
     severity: axs.constants.Severity.Severe,
     relevantNodesSelector: function(scope) {
@@ -26,4 +26,4 @@ axs.AuditRules.addRule({
         return !role.valid;
     },
     code: 'AX_ARIA_01'
-});
+};

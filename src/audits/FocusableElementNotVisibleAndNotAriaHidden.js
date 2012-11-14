@@ -16,7 +16,7 @@ goog.require('axs.AuditRules');
 goog.require('axs.constants.Severity');
 goog.require('axs.utils');
 
-axs.AuditRules.addRule({
+axs.AuditRule.specs.focusableElementNotVisibleAndNotAriaHidden = {
     name: 'focusableElementNotVisibleAndNotAriaHidden',
     severity: axs.constants.Severity.Warning,
     relevantNodesSelector: function(scope) {
@@ -28,4 +28,4 @@ axs.AuditRules.addRule({
         return !axs.utils.elementIsVisible(element)
     },
     code: 'AX_FOCUS_01'
-});
+};

@@ -15,7 +15,7 @@
 goog.require('axs.AuditRules');
 goog.require('axs.constants');
 
-axs.AuditRules.addRule({
+axs.AuditRule.specs.requiredAriaAttributeMissing = {
     name: 'requiredAriaAttributeMissing',
     severity: axs.constants.Severity.Severe,
     relevantNodesSelector: function(scope) {
@@ -30,4 +30,4 @@ axs.AuditRules.addRule({
         }
     },
     code: 'AX_ARIA_03'
-});
+};

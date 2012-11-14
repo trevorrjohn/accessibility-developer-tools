@@ -16,7 +16,7 @@ goog.require('axs.AuditRules');
 goog.require('axs.constants.Severity');
 goog.require('axs.utils');
 
-axs.AuditRules.addRule({
+axs.AuditRule.specs.lowContrastElements = {
     name: 'lowContrastElements',
     severity: axs.constants.Severity.Warning,
     relevantNodesSelector: function(scope) {
@@ -34,4 +34,4 @@ axs.AuditRules.addRule({
         return (contrastRatio && axs.utils.isLowContrast(contrastRatio, style));
     },
     code: 'AX_COLOR_01'
-});
+};
