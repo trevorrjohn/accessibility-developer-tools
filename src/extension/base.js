@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+goog.provide('base');
+
 /**
  * Inherit the prototype methods from one constructor into another.
  *
@@ -42,7 +44,7 @@
  * @param {Function} childCtor Child class.
  * @param {Function} parentCtor Parent class.
  */
-var inherits = function(childCtor, parentCtor) {
+base.inherits = function(childCtor, parentCtor) {
   /** @constructor */
   function tempCtor() {};
   tempCtor.prototype = parentCtor.prototype;

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 goog.require('axs.AuditRule');
+goog.require('base');
+
 goog.provide('axs.ExtensionAuditRule');
 
 
@@ -33,13 +35,13 @@ axs.ExtensionAuditRule = function(spec) {
     /** @type {boolean} */
     this.shouldRunInDevtools = !!spec['opt_requiresConsoleAPI'];
 };
-inherits(axs.ExtensionAuditRule, axs.AuditRule);
+base.inherits(axs.ExtensionAuditRule, axs.AuditRule);
 
 /**
  * Add the given node to the given array. This is to abstract calls to
  * convertNodeToResult() away from the main code.
- * @param {Array.<Element>} nodes
- * @param {Element} node
+ * @param {Array.<Node>} nodes
+ * @param {Node} node
  */
 axs.ExtensionAuditRule.prototype.addNode = function(nodes, node) {
     nodes.push(axs.content.convertNodeToResult(node));

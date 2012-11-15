@@ -19,6 +19,7 @@ function init(result) {
     }
 
     var numAuditRules = Object.keys(axs.AuditRule.specs).length;
+    console.log('audit rules: ', Object.keys(axs.AuditRule.specs));
     var category = chrome.experimental.devtools.audits.addCategory(
         chrome.i18n.getMessage('auditTitle'), numAuditRules + 1);
 

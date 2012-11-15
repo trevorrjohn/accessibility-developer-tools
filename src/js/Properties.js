@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-goog.require('axs.content');
 goog.require('axs.utils');
 
 goog.provide('axs.properties');
@@ -396,7 +395,7 @@ axs.properties.getTextFromHostLangaugeAttributes = function(element, textAlterna
         var labelWrappedValue = {};
         while (parent) {
             if (parent.tagName.toLowerCase() == 'label') {
-                var parentLabel = /** HTMLLabelElement */ parent;
+                var parentLabel = /** @type {HTMLLabelElement} */ parent;
                 if (parentLabel.control == element) {
                     labelWrappedValue.type = 'element';
                     labelWrappedValue.text = axs.properties.findTextAlternatives(parentLabel, {}, true);
