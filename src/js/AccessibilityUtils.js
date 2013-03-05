@@ -696,6 +696,37 @@ axs.utils.fromYCC = function(yccColor) {
     return new axs.utils.Color(red, green, blue, 1);
 };
 
+axs.utils.scalarMultiplyMatrix = function(matrix, scalar) {
+    var result = [];
+    result[0] = [];
+    result[1] = [];
+    result[2] = [];
+
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            result[i][j] = matrix[i][j] * scalar;
+        }
+    }
+
+    return result;
+}
+
+axs.utils.multiplyMatrices = function(matrix1, matrix2) {
+    var result = [];
+    result[0] = [];
+    result[1] = [];
+    result[2] = [];
+
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            result[i][j] = matrix1[i][0] * matrix2[0][j] +
+                           matrix1[i][1] * matrix2[1][j] +
+                           matrix1[i][2] * matrix2[2][j];
+        }
+    }
+    return result;
+}
+
 /**
  * @param {Element} element
  * @return {?number}
