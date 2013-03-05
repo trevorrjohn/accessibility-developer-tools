@@ -73,7 +73,7 @@ axs.properties.getContrastRatioProperties = function(element) {
     if (!value)
         return null;
     contrastRatioProperties['value'] = value.toFixed(2);
-    if (axs.utils.isLowContrast(value, style))
+    if (axs.utils.isLowContrast(value, style)) {
         contrastRatioProperties['alert'] = true;
     var suggestedColors = axs.utils.suggestColors(bgColor, fgColor, value, style);
     if (suggestedColors && Object.keys(suggestedColors).length)
