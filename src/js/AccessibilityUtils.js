@@ -400,7 +400,7 @@ axs.utils.RGBToYCCMatrix = function(kR, kB) {
         [
             (1 - kR)/(2 - 2*kR),
             (kR + kB - 1)/(2 - 2*kR),
-            -kR/(2 - 2*kR)
+            -kB/(2 - 2*kR)
         ]
     ];
 }
@@ -431,9 +431,8 @@ axs.utils.invert3x3Matrix = function(matrix) {
     var H = (c*d - a*f);
     var K = (a*e - b*d);
 
-    var det = a * (e*k - f*h) - b * (k*d - f*g) - c * (d*h - e*g);
+    var det = a * (e*k - f*h) - b * (k*d - f*g) + c * (d*h - e*g);
     var z = 1/det;
-    console.log('det', det, 'z', z);
 
     return axs.utils.scalarMultiplyMatrix([
         [ A, D, G ],
@@ -505,7 +504,6 @@ axs.utils.multiplyMatrices = function(matrix1, matrix2) {
  * Convert a given RGB color to YCC.
  */
 axs.utils.toYCC = function(color) {
-    console.log('converting to YCC:', color);
     var rSRGB = color.red / 255;
     var gSRGB = color.green / 255;
     var bSRGB = color.blue / 255;
@@ -513,7 +511,6 @@ axs.utils.toYCC = function(color) {
     var r = rSRGB <= 0.03928 ? rSRGB / 12.92 : Math.pow(((rSRGB + 0.055)/1.055), 2.4);
     var g = gSRGB <= 0.03928 ? gSRGB / 12.92 : Math.pow(((gSRGB + 0.055)/1.055), 2.4);
     var b = bSRGB <= 0.03928 ? bSRGB / 12.92 : Math.pow(((bSRGB + 0.055)/1.055), 2.4);
-    console.log('r', r, 'g', g, 'b', b);
 
     var kR = 0.2126;
     var kB = 0.0722;
@@ -521,8 +518,6 @@ axs.utils.toYCC = function(color) {
     var y = kR * r + (1 - kR - kB) * g + kB * b;
     var cB = 0.5 * (b - y) / (1 - kB);
     var cR = 0.5 * (r - y) / (1 - kR);
-
-    console.log('conversion matrix', axs.utils.RGBToYCCMatrix(kR, kB));
 
     return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(kR, kB), [r, g, b]);
 };
@@ -533,7 +528,6 @@ axs.utils.toYCC = function(color) {
  * @return {axs.utils.Color}
  */
 axs.utils.fromYCC = function(yccColor) {
-    console.log('converting from YCC:', yccColor);
     var y = yccColor[0];
     var cB = yccColor[1];
     var cR = yccColor[2];
@@ -542,17 +536,14 @@ axs.utils.fromYCC = function(yccColor) {
     var kB = 0.0722;
 
     var inverseMatrix = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(kR, kB));
-    console.log('inverseMatrix', inverseMatrix);
     var rgb = axs.utils.convertColor(inverseMatrix, yccColor);
 
     var r = rgb[0];
     var g = rgb[1];
     var b = rgb[2];
-    console.log('r', r, 'g', g, 'b', b);
-
-    var rSRGB = r <= 0.00303949 ? r * 12.92 : (Math.pow(r, (1/2.4)) * 1.055) - 0.55;
-    var gSRGB = g <= 0.00303949 ? g * 12.92 : (Math.pow(g, (1/2.4)) * 1.055) - 0.55;
-    var bSRGB = b <= 0.00303949 ? b * 12.92 : (Math.pow(b, (1/2.4)) * 1.055) - 0.55;
+    var rSRGB = r <= 0.00303949 ? (r * 12.92) : (Math.pow(r, (1/2.4)) * 1.055) - 0.055;
+    var gSRGB = g <= 0.00303949 ? (g * 12.92) : (Math.pow(g, (1/2.4)) * 1.055) - 0.055;
+    var bSRGB = b <= 0.00303949 ? (b * 12.92) : (Math.pow(b, (1/2.4)) * 1.055) - 0.055;
 
     var red = rSRGB * 255;
     var green = gSRGB * 255;

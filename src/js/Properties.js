@@ -73,8 +73,16 @@ axs.properties.getContrastRatioProperties = function(element) {
     if (!value)
         return null;
     contrastRatioProperties['value'] = value.toFixed(2);
-    if (axs.utils.isLowContrast(value, style))
+    if (axs.utils.isLowContrast(value, style)) {
         contrastRatioProperties['alert'] = true;
+        // TODO(aboxhall): handle clipping by changing bg instead, or ...
+        var bgLuminance = axs.utils.calculateLuminance(bgColor);
+        var desiredFgLuminance = bgLuminance + (axs.utils.isLargeFont(style) ? 3.0 : 4.5);
+        var fgYCC = axs.utils.toYCC(fgColor);
+        var newFgYCC = [ desiredFgLuminance, fgYCC[1], fgYCC[2] ];
+        var newFgColor = axs.utils.fromYCC(newFgYCC);
+        contrastRatioProperties['suggestedFg'] = axs.utils.colorToString(newFgColor);
+    }
     return contrastRatioProperties;
 };
 
