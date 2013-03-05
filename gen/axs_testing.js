@@ -17,17 +17,17 @@ namerequired:!0, parent:["input"], properties:["aria-activedescendant", "aria-au
 namerequired:!0, parent:["grid", "tree"]}, treeitem:{namefrom:["contents", "author"], namerequired:!0, parent:["listitem", "option"]}, widget:{"abstract":!0, parent:["roletype"]}, window:{"abstract":!0, namefrom:[" author"], parent:["roletype"], properties:["aria-expanded"]}};
 axs.constants.WIDGET_ROLES = {};
 for(var roleName in axs.constants.ARIA_ROLES) {
-  var role = axs.constants.ARIA_ROLES[roleName], addAllPropertiesToSet = function(a, c, b) {
-    var d = a[c];
+  var role = axs.constants.ARIA_ROLES[roleName], addAllPropertiesToSet = function(a, b, c) {
+    var d = a[b];
     if(d) {
       for(var e = 0;e < d.length;e++) {
-        b[d[e]] = !0
+        c[d[e]] = !0
       }
     }
     if(a.parent) {
       a = a.parent;
       for(d = 0;d < a.length;d++) {
-        addAllPropertiesToSet(axs.constants.ARIA_ROLES[a[d]], c, b)
+        addAllPropertiesToSet(axs.constants.ARIA_ROLES[a[d]], b, c)
       }
     }
   }, propertiesSet = {};
@@ -36,12 +36,12 @@ for(var roleName in axs.constants.ARIA_ROLES) {
   var requiredPropertiesSet = {};
   addAllPropertiesToSet(role, "requiredProperties", requiredPropertiesSet);
   role.requiredPropertiesSet = requiredPropertiesSet;
-  var addAllParentRolesToSet = function(a, c) {
+  var addAllParentRolesToSet = function(a, b) {
     if(a.parent) {
-      for(var b = a.parent, d = 0;d < b.length;d++) {
-        var e = b[d];
-        c[e] = !0;
-        addAllParentRolesToSet(axs.constants.ARIA_ROLES[e], c)
+      for(var c = a.parent, d = 0;d < c.length;d++) {
+        var e = c[d];
+        b[e] = !0;
+        addAllParentRolesToSet(axs.constants.ARIA_ROLES[e], b)
       }
     }
   }, parentRolesSet = {};
@@ -81,42 +81,42 @@ axs.constants.Severity = {Info:"Info", Warning:"Warning", Severe:"Severe"};
 axs.constants.AuditResult = {PASS:"PASS", FAIL:"FAIL", NA:"NA"};
 axs.utils = {};
 axs.utils.FOCUSABLE_ELEMENTS_SELECTOR = "input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href],iframe,[tabindex]";
-axs.utils.Color = function(a, c, b, d) {
+axs.utils.Color = function(a, b, c, d) {
   this.red = a;
-  this.green = c;
-  this.blue = b;
+  this.green = b;
+  this.blue = c;
   this.alpha = d
 };
-axs.utils.calculateContrastRatio = function(a, c) {
-  if(!a || !c) {
+axs.utils.calculateContrastRatio = function(a, b) {
+  if(!a || !b) {
     return null
   }
-  1 > a.alpha && (a = axs.utils.flattenColors(a, c));
-  var b = axs.utils.calculateLuminance(a), d = axs.utils.calculateLuminance(c);
-  return(Math.max(b, d) + 0.05) / (Math.min(b, d) + 0.05)
+  1 > a.alpha && (a = axs.utils.flattenColors(a, b));
+  var c = axs.utils.calculateLuminance(a), d = axs.utils.calculateLuminance(b);
+  return(Math.max(c, d) + 0.05) / (Math.min(c, d) + 0.05)
 };
 axs.utils.elementIsTransparent = function(a) {
   return"0" == a.style.opacity
 };
 axs.utils.elementHasZeroArea = function(a) {
   a = a.getBoundingClientRect();
-  var c = a.top - a.bottom;
-  return!(a.right - a.left) || !c ? !0 : !1
+  var b = a.top - a.bottom;
+  return!(a.right - a.left) || !b ? !0 : !1
 };
 axs.utils.elementIsOutsideScrollArea = function(a) {
   a = a.getBoundingClientRect();
-  var c = document.body.scrollWidth, b = document.body.scrollTop, d = document.body.scrollLeft;
-  return a.top >= document.body.scrollHeight || a.bottom <= -b || a.left >= c || a.right <= -d ? !0 : !1
+  var b = document.body.scrollWidth, c = document.body.scrollTop, d = document.body.scrollLeft;
+  return a.top >= document.body.scrollHeight || a.bottom <= -c || a.left >= b || a.right <= -d ? !0 : !1
 };
 axs.utils.overlappingElement = function(a) {
-  function c(a, b) {
-    return null == b ? !1 : b === a ? !0 : c(a, b.parentNode)
+  function b(a, c) {
+    return null == c ? !1 : c === a ? !0 : b(a, c.parentNode)
   }
   if(axs.utils.elementHasZeroArea(a)) {
     return null
   }
-  var b = a.getBoundingClientRect(), b = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
-  return null != b && b != a && !c(b, a) ? b : null
+  var c = a.getBoundingClientRect(), c = document.elementFromPoint((c.left + c.right) / 2, (c.top + c.bottom) / 2);
+  return null != c && c != a && !b(c, a) ? c : null
 };
 axs.utils.elementIsHtmlControl = function(a) {
   return a instanceof HTMLButtonElement || a instanceof HTMLInputElement || a instanceof HTMLSelectElement || a instanceof HTMLTextAreaElement ? !0 : !1
@@ -134,42 +134,42 @@ axs.utils.elementIsVisible = function(a) {
     return!1
   }
   if(a = axs.utils.overlappingElement(a)) {
-    var c = window.getComputedStyle(a, null);
-    if(c && (a = axs.utils.getBgColor(c, a)) && 0 < a.alpha) {
+    var b = window.getComputedStyle(a, null);
+    if(b && (a = axs.utils.getBgColor(b, a)) && 0 < a.alpha) {
       return!1
     }
   }
   return!0
 };
 axs.utils.isLargeFont = function(a) {
-  var c = a.fontSize;
+  var b = a.fontSize;
   a = "bold" == a.fontWeight;
-  var b = c.match(/(\d+)px/);
-  if(b) {
-    return c = parseInt(b[1], 10), a && 19.2 <= c || 24 <= c ? !0 : !1
+  var c = b.match(/(\d+)px/);
+  if(c) {
+    return b = parseInt(c[1], 10), a && 19.2 <= b || 24 <= b ? !0 : !1
   }
-  if(b = c.match(/(\d+)em/)) {
-    return c = parseInt(b[1], 10), a && 1.2 <= c || 1.5 <= c ? !0 : !1
+  if(c = b.match(/(\d+)em/)) {
+    return b = parseInt(c[1], 10), a && 1.2 <= b || 1.5 <= b ? !0 : !1
   }
-  if(b = c.match(/(\d+)%/)) {
-    return c = parseInt(b[1], 10), a && 120 <= c || 150 <= c ? !0 : !1
+  if(c = b.match(/(\d+)%/)) {
+    return b = parseInt(c[1], 10), a && 120 <= b || 150 <= b ? !0 : !1
   }
-  if(b = c.match(/(\d+)pt/)) {
-    if(c = parseInt(b[1], 10), a && 14 <= c || 14 <= c) {
+  if(c = b.match(/(\d+)pt/)) {
+    if(b = parseInt(c[1], 10), a && 14 <= b || 14 <= b) {
       return!0
     }
   }
   return!1
 };
-axs.utils.getBgColor = function(a, c) {
-  var b = axs.utils.parseColor(a.backgroundColor);
-  if(!b || a.backgroundImage && "none" != a.backgroundImage) {
+axs.utils.getBgColor = function(a, b) {
+  var c = axs.utils.parseColor(a.backgroundColor);
+  if(!c || a.backgroundImage && "none" != a.backgroundImage) {
     return null
   }
-  if(1 > b.alpha) {
-    var d = c, e = [];
-    e.push(b);
-    for(b = null;d = d.parentElement;) {
+  if(1 > c.alpha) {
+    var d = b, e = [];
+    e.push(c);
+    for(c = null;d = d.parentElement;) {
       var f = window.getComputedStyle(d, null);
       if(f) {
         if(f.backgroundImage && "none" != f.backgroundImage) {
@@ -177,74 +177,128 @@ axs.utils.getBgColor = function(a, c) {
         }
         if((f = axs.utils.parseColor(f.backgroundColor)) && 0 != f.alpha) {
           if(e.push(f), 1 == f.alpha) {
-            b = null;
+            c = null;
             break
           }
         }
       }
     }
-    b || e.push(new axs.utils.Color(255, 255, 255, 1));
+    c || e.push(new axs.utils.Color(255, 255, 255, 1));
     for(d = e.pop();e.length;) {
-      b = e.pop(), d = axs.utils.flattenColors(b, d)
+      c = e.pop(), d = axs.utils.flattenColors(c, d)
     }
-    b = d
+    c = d
   }
-  return b
+  return c
 };
-axs.utils.getFgColor = function(a, c) {
-  var b = axs.utils.parseColor(a.color);
-  if(!b) {
+axs.utils.getFgColor = function(a, b) {
+  var c = axs.utils.parseColor(a.color);
+  if(!c) {
     return null
   }
-  1 > b.alpha && (b = axs.utils.flattenColors(b, c));
-  return b
+  1 > c.alpha && (c = axs.utils.flattenColors(c, b));
+  return c
 };
 axs.utils.parseColor = function(a) {
-  var c = a.match(/^rgb\((\d+), (\d+), (\d+)\)$/);
-  if(c) {
-    a = parseInt(c[1], 10);
-    var b = parseInt(c[2], 10), c = parseInt(c[3], 10), d;
-    return new axs.utils.Color(a, b, c, 1)
+  var b = a.match(/^rgb\((\d+), (\d+), (\d+)\)$/);
+  if(b) {
+    a = parseInt(b[1], 10);
+    var c = parseInt(b[2], 10), b = parseInt(b[3], 10), d;
+    return new axs.utils.Color(a, c, b, 1)
   }
-  return(c = a.match(/^rgba\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)/)) ? (d = parseInt(c[4], 10), a = parseInt(c[1], 10), b = parseInt(c[2], 10), c = parseInt(c[3], 10), new axs.utils.Color(a, b, c, d)) : null
+  return(b = a.match(/^rgba\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)/)) ? (d = parseInt(b[4], 10), a = parseInt(b[1], 10), c = parseInt(b[2], 10), b = parseInt(b[3], 10), new axs.utils.Color(a, c, b, d)) : null
 };
 axs.utils.colorToString = function(a) {
   return"rgba(" + [a.red, a.green, a.blue, a.alpha].join() + ")"
 };
-axs.utils.flattenColors = function(a, c) {
-  var b = a.alpha;
-  return new axs.utils.Color((1 - b) * c.red + b * a.red, (1 - b) * c.green + b * a.green, (1 - b) * c.blue + b * a.blue, 1)
+axs.utils.flattenColors = function(a, b) {
+  var c = a.alpha;
+  return new axs.utils.Color((1 - c) * b.red + c * a.red, (1 - c) * b.green + c * a.green, (1 - c) * b.blue + c * a.blue, 1)
 };
 axs.utils.calculateLuminance = function(a) {
-  var c = a.red / 255, b = a.green / 255;
+  var b = a.red / 255, c = a.green / 255;
   a = a.blue / 255;
-  c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   b = 0.03928 >= b ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+  c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
-  return 0.2126 * c + 0.7152 * b + 0.0722 * a
+  return 0.2126 * b + 0.7152 * c + 0.0722 * a
+};
+axs.utils.RGBToYCCMatrix = function(a, b) {
+  return[[a, 1 - a - b, b], [-a / (2 - 2 * b), (a + b - 1) / (2 - 2 * b), (1 - b) / (2 - 2 * b)], [(1 - a) / (2 - 2 * a), (a + b - 1) / (2 - 2 * a), -a / (2 - 2 * a)]]
+};
+axs.utils.invert3x3Matrix = function(a) {
+  var b = a[0][0], c = a[0][1], d = a[0][2], e = a[1][0], f = a[1][1], g = a[1][2], h = a[2][0], j = a[2][1], k = a[2][2];
+  a = f * k - g * j;
+  var l = g * h - e * k, m = e * j - f * h, n = d * j - c * k, p = b * k - d * h, q = h * c - b * j, r = c * g - d * f, s = d * e - b * g, t = b * f - c * e, b = b * (f * k - g * j) - c * (k * e - g * h) - d * (e * j - f * h), c = 1 / b;
+  console.log("det", b, "z", c);
+  return axs.utils.scalarMultiplyMatrix([[a, n, r], [l, p, s], [m, q, t]], c)
+};
+axs.utils.scalarMultiplyMatrix = function(a, b) {
+  for(var c = [[], [], []], d = 0;3 > d;d++) {
+    for(var e = 0;3 > e;e++) {
+      c[d][e] = a[d][e] * b
+    }
+  }
+  return c
+};
+axs.utils.convertColor = function(a, b) {
+  var c = b[0], d = b[1], e = b[2];
+  return[a[0][0] * c + a[0][1] * d + a[0][2] * e, a[1][0] * c + a[1][1] * d + a[1][2] * e, a[2][0] * c + a[2][1] * d + a[2][2] * e]
+};
+axs.utils.multiplyMatrices = function(a, b) {
+  for(var c = [[], [], []], d = 0;3 > d;d++) {
+    for(var e = 0;3 > e;e++) {
+      c[d][e] = a[d][0] * b[0][e] + a[d][1] * b[1][e] + a[d][2] * b[2][e]
+    }
+  }
+  return c
+};
+axs.utils.toYCC = function(a) {
+  console.log("converting to YCC:", a);
+  var b = a.red / 255, c = a.green / 255;
+  a = a.blue / 255;
+  b = 0.03928 >= b ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+  c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
+  console.log("r", b, "g", c, "b", a);
+  console.log("conversion matrix", axs.utils.RGBToYCCMatrix(0.2126, 0.0722));
+  return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(0.2126, 0.0722), [b, c, a])
+};
+axs.utils.fromYCC = function(a) {
+  console.log("converting from YCC:", a);
+  var b = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(0.2126, 0.0722));
+  console.log("inverseMatrix", b);
+  var b = axs.utils.convertColor(b, a), c = b[0];
+  a = b[1];
+  b = b[2];
+  console.log("r", c, "g", a, "b", b);
+  c = 0.00303949 >= c ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.55;
+  a = 0.00303949 >= a ? 12.92 * a : 1.055 * Math.pow(a, 1 / 2.4) - 0.55;
+  b = 0.00303949 >= b ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.55;
+  return new axs.utils.Color(255 * c, 255 * a, 255 * b, 1)
 };
 axs.utils.getContrastRatioForElement = function(a) {
-  var c = window.getComputedStyle(a, null);
-  return axs.utils.getContrastRatioForElementWithComputedStyle(c, a)
+  var b = window.getComputedStyle(a, null);
+  return axs.utils.getContrastRatioForElementWithComputedStyle(b, a)
 };
-axs.utils.getContrastRatioForElementWithComputedStyle = function(a, c) {
-  if(!axs.utils.elementIsVisible(c)) {
+axs.utils.getContrastRatioForElementWithComputedStyle = function(a, b) {
+  if(!axs.utils.elementIsVisible(b)) {
     return null
   }
-  var b = axs.utils.getBgColor(a, c);
-  if(!b) {
+  var c = axs.utils.getBgColor(a, b);
+  if(!c) {
     return null
   }
-  var d = axs.utils.getFgColor(a, b);
-  return!d ? null : axs.utils.calculateContrastRatio(d, b)
+  var d = axs.utils.getFgColor(a, c);
+  return!d ? null : axs.utils.calculateContrastRatio(d, c)
 };
 axs.utils.isNativeTextElement = function(a) {
-  var c = a.tagName.toLowerCase();
+  var b = a.tagName.toLowerCase();
   a = a.type ? a.type.toLowerCase() : "";
-  if("textarea" == c) {
+  if("textarea" == b) {
     return!0
   }
-  if("input" != c) {
+  if("input" != b) {
     return!1
   }
   switch(a) {
@@ -268,19 +322,19 @@ axs.utils.isNativeTextElement = function(a) {
       return!1
   }
 };
-axs.utils.isLowContrast = function(a, c) {
-  return 3 > a || !axs.utils.isLargeFont(c) && 4.5 > a
+axs.utils.isLowContrast = function(a, b) {
+  return 3 > a || !axs.utils.isLargeFont(b) && 4.5 > a
 };
 axs.utils.hasLabel = function(a) {
-  var c = a.tagName.toLowerCase(), b = a.type ? a.type.toLowerCase() : "";
-  if(a.hasAttribute("aria-label") || a.hasAttribute("title") || "img" == c && a.hasAttribute("alt") || "input" == c && "image" == b && a.hasAttribute("alt") || "input" == c && ("submit" == b || "reset" == b) || a.hasAttribute("aria-labelledby") || axs.utils.isNativeTextElement(a) && a.hasAttribute("placeholder") || a.hasAttribute("id") && 0 < document.querySelectorAll("label[for=" + a.id + "]").length) {
+  var b = a.tagName.toLowerCase(), c = a.type ? a.type.toLowerCase() : "";
+  if(a.hasAttribute("aria-label") || a.hasAttribute("title") || "img" == b && a.hasAttribute("alt") || "input" == b && "image" == c && a.hasAttribute("alt") || "input" == b && ("submit" == c || "reset" == c) || a.hasAttribute("aria-labelledby") || axs.utils.isNativeTextElement(a) && a.hasAttribute("placeholder") || a.hasAttribute("id") && 0 < document.querySelectorAll("label[for=" + a.id + "]").length) {
     return!0
   }
-  for(c = a.parentElement;c;) {
-    if("label" == c.tagName.toLowerCase() && c.control == a) {
+  for(b = a.parentElement;b;) {
+    if("label" == b.tagName.toLowerCase() && b.control == a) {
       return!0
     }
-    c = c.parentElement
+    b = b.parentElement
   }
   return!1
 };
@@ -289,10 +343,10 @@ axs.utils.isElementHidden = function(a) {
     return!1
   }
   if(a.hasAttribute("chromevoxignoreariahidden")) {
-    var c = !0
+    var b = !0
   }
-  var b = window.getComputedStyle(a, null);
-  return"none" == b.display || "hidden" == b.visibility ? !0 : a.hasAttribute("aria-hidden") && "true" == a.getAttribute("aria-hidden").toLowerCase() ? !c : !1
+  var c = window.getComputedStyle(a, null);
+  return"none" == c.display || "hidden" == c.visibility ? !0 : a.hasAttribute("aria-hidden") && "true" == a.getAttribute("aria-hidden").toLowerCase() ? !b : !1
 };
 axs.utils.isElementOrAncestorHidden = function(a) {
   return axs.utils.isElementHidden(a) ? !0 : a.parentElement ? axs.utils.isElementOrAncestorHidden(a.parentElement) : !1
@@ -304,8 +358,8 @@ axs.utils.getRole = function(a) {
   a = a.getAttribute("role");
   return axs.constants.ARIA_ROLES[a] ? {name:a, details:axs.constants.ARIA_ROLES[a], valid:!0} : {name:a, valid:!1}
 };
-axs.utils.getAriaPropertyValue = function(a, c, b) {
-  var d = a.replace(/^aria-/, ""), e = axs.constants.ARIA_PROPERTIES[d], d = {name:a, rawValue:c};
+axs.utils.getAriaPropertyValue = function(a, b, c) {
+  var d = a.replace(/^aria-/, ""), e = axs.constants.ARIA_PROPERTIES[d], d = {name:a, rawValue:b};
   if(!e) {
     return d.valid = !1, d.reason = '"' + a + '" is not a valid ARIA property', d
   }
@@ -315,83 +369,83 @@ axs.utils.getAriaPropertyValue = function(a, c, b) {
   }
   switch(e) {
     case "idref":
-      a = axs.utils.isValidIDRefValue(c, b), d.valid = a.valid, d.reason = a.reason, d.idref = a.idref;
+      a = axs.utils.isValidIDRefValue(b, c), d.valid = a.valid, d.reason = a.reason, d.idref = a.idref;
     case "idref_list":
-      a = c.split(/\s+/);
+      a = b.split(/\s+/);
       d.valid = !0;
-      for(c = 0;c < a.length;c++) {
-        e = axs.utils.isValidIDRefValue(a[c], b), e.valid || (d.valid = !1), d.values ? d.values.push(e) : d.values = [e]
+      for(b = 0;b < a.length;b++) {
+        e = axs.utils.isValidIDRefValue(a[b], c), e.valid || (d.valid = !1), d.values ? d.values.push(e) : d.values = [e]
       }
       return d;
     case "integer":
-      b = axs.utils.isValidNumber(c);
-      if(!b.valid) {
-        return d.valid = !1, d.reason = b.reason, d
+      c = axs.utils.isValidNumber(b);
+      if(!c.valid) {
+        return d.valid = !1, d.reason = c.reason, d
       }
-      Math.floor(b.value) != b.value ? (d.valid = !1, d.reason = "" + c + " is not a whole integer") : (d.valid = !0, d.value = b.value);
+      Math.floor(c.value) != c.value ? (d.valid = !1, d.reason = "" + b + " is not a whole integer") : (d.valid = !0, d.value = c.value);
       return d;
     case "number":
-      b = axs.utils.isValidNumber(c), b.valid && (d.valid = !0, d.value = b.value);
+      c = axs.utils.isValidNumber(b), c.valid && (d.valid = !0, d.value = c.value);
     case "string":
-      return d.valid = !0, d.value = c, d;
+      return d.valid = !0, d.value = b, d;
     case "token":
-      return b = axs.utils.isValidTokenValue(a, c.toLowerCase()), b.valid ? (d.valid = !0, d.value = b.value) : (d.valid = !1, d.value = c, d.reason = b.reason), d;
+      return c = axs.utils.isValidTokenValue(a, b.toLowerCase()), c.valid ? (d.valid = !0, d.value = c.value) : (d.valid = !1, d.value = b, d.reason = c.reason), d;
     case "token_list":
-      e = c.split(/\s+/);
+      e = b.split(/\s+/);
       d.valid = !0;
-      for(c = 0;c < e.length;c++) {
-        b = axs.utils.isValidTokenValue(a, e[c].toLowerCase()), b.valid || (d.valid = !1, d.reason ? (d.reason = [d.reason], d.reason.push(b.reason)) : (d.reason = b.reason, d.possibleValues = b.possibleValues)), d.values ? d.values.push(b.value) : d.values = [b.value]
+      for(b = 0;b < e.length;b++) {
+        c = axs.utils.isValidTokenValue(a, e[b].toLowerCase()), c.valid || (d.valid = !1, d.reason ? (d.reason = [d.reason], d.reason.push(c.reason)) : (d.reason = c.reason, d.possibleValues = c.possibleValues)), d.values ? d.values.push(c.value) : d.values = [c.value]
       }
       return d;
     case "tristate":
-      return b = axs.utils.isPossibleValue(c.toLowerCase(), axs.constants.MIXED_VALUES, a), b.valid ? (d.valid = !0, d.value = b.value) : (d.valid = !1, d.value = c, d.reason = b.reason), d;
+      return c = axs.utils.isPossibleValue(b.toLowerCase(), axs.constants.MIXED_VALUES, a), c.valid ? (d.valid = !0, d.value = c.value) : (d.valid = !1, d.value = b, d.reason = c.reason), d;
     case "true-false":
-      return b = axs.utils.isValidBoolean(c), b.valid ? (d.valid = !0, d.value = b.value) : (d.valid = !1, d.value = c, d.reason = b.reason), d;
+      return c = axs.utils.isValidBoolean(b), c.valid ? (d.valid = !0, d.value = c.value) : (d.valid = !1, d.value = b, d.reason = c.reason), d;
     case "true-false-undefined":
-      return b = axs.utils.isValidBoolean(c), b.valid ? (d.valid = !0, d.value = b.value) : (d.valid = !1, d.value = c, d.reason = b.reason), d
+      return c = axs.utils.isValidBoolean(b), c.valid ? (d.valid = !0, d.value = c.value) : (d.valid = !1, d.value = b, d.reason = c.reason), d
   }
   d.valid = !1;
   d.reason = "Not a valid ARIA property";
   return d
 };
-axs.utils.isValidTokenValue = function(a, c) {
-  var b = a.replace(/^aria-/, "");
-  return axs.utils.isPossibleValue(c, axs.constants.ARIA_PROPERTIES[b].valuesSet, a)
+axs.utils.isValidTokenValue = function(a, b) {
+  var c = a.replace(/^aria-/, "");
+  return axs.utils.isPossibleValue(b, axs.constants.ARIA_PROPERTIES[c].valuesSet, a)
 };
-axs.utils.isPossibleValue = function(a, c, b) {
-  return!c[a] ? {valid:!1, value:a, reason:'"' + a + '" is not a valid value for ' + b, possibleValues:Object.keys(c)} : {valid:!0, value:a}
+axs.utils.isPossibleValue = function(a, b, c) {
+  return!b[a] ? {valid:!1, value:a, reason:'"' + a + '" is not a valid value for ' + c, possibleValues:Object.keys(b)} : {valid:!0, value:a}
 };
 axs.utils.isValidBoolean = function(a) {
   try {
-    var c = JSON.parse(a)
-  }catch(b) {
-    c = ""
+    var b = JSON.parse(a)
+  }catch(c) {
+    b = ""
   }
-  return"boolean" != typeof c ? {valid:!1, value:a, reason:'"' + a + '" is not a true/false value'} : {valid:!0, value:c}
+  return"boolean" != typeof b ? {valid:!1, value:a, reason:'"' + a + '" is not a true/false value'} : {valid:!0, value:b}
 };
-axs.utils.isValidIDRefValue = function(a, c) {
-  return!c.ownerDocument.getElementById(a) ? {valid:!1, idref:a, reason:'No element with ID "' + a + '"'} : {valid:!0, idref:a}
+axs.utils.isValidIDRefValue = function(a, b) {
+  return!b.ownerDocument.getElementById(a) ? {valid:!1, idref:a, reason:'No element with ID "' + a + '"'} : {valid:!0, idref:a}
 };
 axs.utils.isValidNumber = function(a) {
-  var c = JSON.parse(a);
-  return"number" != typeof c ? {valid:!1, value:a, reason:'"' + a + '" is not a number'} : {valid:!0, value:c}
+  var b = JSON.parse(a);
+  return"number" != typeof b ? {valid:!1, value:a, reason:'"' + a + '" is not a number'} : {valid:!0, value:b}
 };
 axs.utils.isElementImplicitlyFocusable = function(a) {
   return a instanceof HTMLAnchorElement || a instanceof HTMLAreaElement ? a.hasAttribute("href") : a instanceof HTMLInputElement || a instanceof HTMLSelectElement || a instanceof HTMLTextAreaElement || a instanceof HTMLButtonElement || a instanceof HTMLIFrameElement ? !a.disabled : !1
 };
 axs.utils.values = function(a) {
-  var c = [], b;
-  for(b in a) {
-    a.hasOwnProperty(b) && "function" != typeof a[b] && c.push(a[b])
+  var b = [], c;
+  for(c in a) {
+    a.hasOwnProperty(c) && "function" != typeof a[c] && b.push(a[c])
   }
-  return c
+  return b
 };
 axs.utils.namedValues = function(a) {
-  var c = {}, b;
-  for(b in a) {
-    a.hasOwnProperty(b) && "function" != typeof a[b] && (c[b] = a[b])
+  var b = {}, c;
+  for(c in a) {
+    a.hasOwnProperty(c) && "function" != typeof a[c] && (b[c] = a[c])
   }
-  return c
+  return b
 };
 axs.utils.getQuerySelectorText = function(a) {
   if(null == a || "HTML" == a.tagName) {
@@ -405,14 +459,14 @@ axs.utils.getQuerySelectorText = function(a) {
       return"#" + a.id
     }
     if(a.className) {
-      for(var c = "", b = 0;b < a.classList.length;b++) {
-        c += "." + a.classList[b]
+      for(var b = "", c = 0;c < a.classList.length;c++) {
+        b += "." + a.classList[c]
       }
       var d = 0;
       if(a.parentNode) {
-        for(b = 0;b < a.parentNode.children.length;b++) {
-          var e = a.parentNode.children[b];
-          e.webkitMatchesSelector(c) && d++;
+        for(c = 0;c < a.parentNode.children.length;c++) {
+          var e = a.parentNode.children[c];
+          e.webkitMatchesSelector(b) && d++;
           if(e === a) {
             break
           }
@@ -420,17 +474,17 @@ axs.utils.getQuerySelectorText = function(a) {
       }else {
         d = 1
       }
-      return 1 == d ? axs.utils.getQuerySelectorText(a.parentNode) + " > " + c : axs.utils.getQuerySelectorText(a.parentNode) + " > " + c + ":nth-of-type(" + d + ")"
+      return 1 == d ? axs.utils.getQuerySelectorText(a.parentNode) + " > " + b : axs.utils.getQuerySelectorText(a.parentNode) + " > " + b + ":nth-of-type(" + d + ")"
     }
     if(a.parentNode) {
-      c = a.parentNode.children;
+      b = a.parentNode.children;
       d = 1;
-      for(b = 0;c[b] !== a;) {
-        c[b].tagName == a.tagName && d++, b++
+      for(c = 0;b[c] !== a;) {
+        b[c].tagName == a.tagName && d++, c++
       }
-      b = "";
-      "BODY" != a.parentNode.tagName && (b = axs.utils.getQuerySelectorText(a.parentNode) + " > ");
-      return 1 == d ? b + a.tagName : b + a.tagName + ":nth-of-type(" + d + ")"
+      c = "";
+      "BODY" != a.parentNode.tagName && (c = axs.utils.getQuerySelectorText(a.parentNode) + " > ");
+      return 1 == d ? c + a.tagName : c + a.tagName + ":nth-of-type(" + d + ")"
     }
   }else {
     if(a.selectorText) {
@@ -440,12 +494,12 @@ axs.utils.getQuerySelectorText = function(a) {
   return""
 };
 axs.AuditRule = function(a) {
-  for(var c = !0, b = [], d = 0;d < axs.AuditRule.requiredFields.length;d++) {
+  for(var b = !0, c = [], d = 0;d < axs.AuditRule.requiredFields.length;d++) {
     var e = axs.AuditRule.requiredFields[d];
-    e in a || (c = !1, b.push(e))
+    e in a || (b = !1, c.push(e))
   }
-  if(!c) {
-    throw"Invalid spec; the following fields were not specified: " + b.join(", ") + "\n" + JSON.stringify(a);
+  if(!b) {
+    throw"Invalid spec; the following fields were not specified: " + c.join(", ") + "\n" + JSON.stringify(a);
   }
   this.name = a.name;
   this.severity = a.severity;
@@ -456,11 +510,11 @@ axs.AuditRule = function(a) {
 };
 axs.AuditRule.requiredFields = ["name", "severity", "relevantNodesSelector", "test", "code"];
 axs.AuditRule.NOT_APPLICABLE = {result:axs.constants.AuditResult.NA};
-axs.AuditRule.prototype.addNode = function(a, c) {
-  a.push(c)
+axs.AuditRule.prototype.addNode = function(a, b) {
+  a.push(b)
 };
-axs.AuditRule.prototype.run = function(a, c) {
-  function b(a) {
+axs.AuditRule.prototype.run = function(a, b) {
+  function c(a) {
     for(var b = 0;b < d.length;b++) {
       if(a.webkitMatchesSelector(d[b])) {
         return!0
@@ -468,7 +522,7 @@ axs.AuditRule.prototype.run = function(a, c) {
     }
     return!1
   }
-  var d = a || [], e = this.relevantNodesSelector_(c || document), f = [];
+  var d = a || [], e = this.relevantNodesSelector_(b || document), f = [];
   if(e instanceof XPathResult) {
     if(e.resultType == XPathResult.ORDERED_NODE_SNAPSHOT_TYPE) {
       if(!e.snapshotLength) {
@@ -476,7 +530,7 @@ axs.AuditRule.prototype.run = function(a, c) {
       }
       for(var g = 0;g < e.snapshotLength;g++) {
         var h = e.snapshotItem(g);
-        this.test_(h) && !b(h) && this.addNode(f, h)
+        this.test_(h) && !c(h) && this.addNode(f, h)
       }
     }else {
       return console.warn("Unknown XPath result type", e), null
@@ -486,7 +540,7 @@ axs.AuditRule.prototype.run = function(a, c) {
       return{result:axs.constants.AuditResult.NA}
     }
     for(g = 0;g < e.length;g++) {
-      h = e[g], this.test_(h) && !b(h) && this.addNode(f, h)
+      h = e[g], this.test_(h) && !c(h) && this.addNode(f, h)
     }
   }
   return{result:f.length ? axs.constants.AuditResult.FAIL : axs.constants.AuditResult.PASS, elements:f}
@@ -496,9 +550,9 @@ axs.AuditRules = {};
 axs.AuditRules.getRule = function(a) {
   if(!axs.AuditRules.rules) {
     axs.AuditRules.rules = {};
-    for(var c in axs.AuditRule.specs) {
-      var b = axs.AuditRule.specs[c], d = new axs.AuditRule(b);
-      axs.AuditRules.rules[b.name] = d
+    for(var b in axs.AuditRule.specs) {
+      var c = axs.AuditRule.specs[b], d = new axs.AuditRule(c);
+      axs.AuditRules.rules[c.name] = d
     }
   }
   return axs.AuditRules.rules[a]
@@ -509,16 +563,16 @@ axs.AuditConfiguration = function() {
   this.auditRulesToIgnore = this.auditRulesToRun = this.scope = null;
   this.withConsoleApi = !1
 };
-axs.AuditConfiguration.prototype = {ignoreSelectors:function(a, c) {
+axs.AuditConfiguration.prototype = {ignoreSelectors:function(a, b) {
   a in this.rules_ || (this.rules_[a] = {});
   "ignore" in this.rules_[a] || (this.rules_[a].ignore = []);
-  Array.prototype.push.call(this.rules_[a].ignore, c)
+  Array.prototype.push.call(this.rules_[a].ignore, b)
 }, getIgnoreSelectors:function(a) {
   return a in this.rules_ && "ignore" in this.rules_[a] ? this.rules_[a].ignore : []
 }};
 axs.Audit.run = function(a) {
   a = a || new axs.AuditConfiguration;
-  var c = a.withConsoleApi, b = [], d;
+  var b = a.withConsoleApi, c = [], d;
   d = a.auditRulesToRun && 0 < a.auditRulesToRun.length ? a.auditRulesToRun : Object.keys(axs.AuditRule.specs);
   if(a.auditRulesToIgnore) {
     for(var e = 0;e < a.auditRulesToIgnore.length;e++) {
@@ -527,50 +581,50 @@ axs.Audit.run = function(a) {
     }
   }
   for(e = 0;e < d.length;e++) {
-    if((f = axs.AuditRules.getRule(d[e])) && !f.disabled && (c || !f.requiresConsoleAPI)) {
+    if((f = axs.AuditRules.getRule(d[e])) && !f.disabled && (b || !f.requiresConsoleAPI)) {
       var g = [], h = a.getIgnoreSelectors(f.name);
       (0 < h.length || a.scope) && g.push(h);
       a.scope && g.push(a.scope);
       g = f.run.apply(f, g);
       g.rule = axs.utils.namedValues(f);
-      b.push(g)
+      c.push(g)
     }
   }
-  return b
+  return c
 };
-axs.Audit.createReport = function(a, c) {
-  var b;
-  b = "*** Begin accessibility audit results ***\nAn accessibility audit found ";
+axs.Audit.createReport = function(a, b) {
+  var c;
+  c = "*** Begin accessibility audit results ***\nAn accessibility audit found ";
   for(var d = 0, e = "", f = 0, g = "", h = 0;h < a.length;h++) {
     var j = a[h];
     j.result == axs.constants.AuditResult.FAIL && (j.rule.severity == axs.constants.Severity.Severe ? (f++, g += "\n\n" + axs.Audit.accessibilityErrorMessage(j)) : (d++, e += "\n\n" + axs.Audit.accessibilityErrorMessage(j)))
   }
-  0 < f && (b += f + (1 == f ? " error " : " errors "), 0 < d && (b += "and "));
-  0 < d && (b += d + (1 == d ? " warning " : " warnings "));
-  b = b + "on this page.\n" + ("For more information, please see " + (void 0 != c ? c : "https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules"));
-  b += g;
-  b += e;
-  return b += "\n*** End accessibility audit results ***"
+  0 < f && (c += f + (1 == f ? " error " : " errors "), 0 < d && (c += "and "));
+  0 < d && (c += d + (1 == d ? " warning " : " warnings "));
+  c = c + "on this page.\n" + ("For more information, please see " + (void 0 != b ? b : "https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules"));
+  c += g;
+  c += e;
+  return c += "\n*** End accessibility audit results ***"
 };
 axs.Audit.accessibilityErrorMessage = function(a) {
-  for(var c = a.rule.severity == axs.constants.Severity.Severe ? "Error: " : "Warning: ", c = c + (a.rule.name + " (" + a.rule.code + ") failed on the following " + (1 == a.elements.length ? "element" : "elements")), c = 1 == a.elements.length ? c + ":" : c + (" (1 - " + Math.min(5, a.elements.length) + " of " + a.elements.length + "):"), b = Math.min(a.elements.length, 5), d = 0;d < b;d++) {
-    c += "\n" + axs.utils.getQuerySelectorText(a.elements[d])
+  for(var b = a.rule.severity == axs.constants.Severity.Severe ? "Error: " : "Warning: ", b = b + (a.rule.name + " (" + a.rule.code + ") failed on the following " + (1 == a.elements.length ? "element" : "elements")), b = 1 == a.elements.length ? b + ":" : b + (" (1 - " + Math.min(5, a.elements.length) + " of " + a.elements.length + "):"), c = Math.min(a.elements.length, 5), d = 0;d < c;d++) {
+    b += "\n" + axs.utils.getQuerySelectorText(a.elements[d])
   }
-  return c
+  return b
 };
 axs.AuditRule.specs.badAriaAttributeValue = {name:"badAriaAttributeValue", severity:axs.constants.Severity.Severe, relevantNodesSelector:function(a) {
-  var c = "", b;
-  for(b in axs.constants.ARIA_PROPERTIES) {
-    c += "[aria-" + b + "],"
+  var b = "", c;
+  for(c in axs.constants.ARIA_PROPERTIES) {
+    b += "[aria-" + c + "],"
   }
-  c = c.substring(0, c.length - 1);
-  return a.querySelectorAll(c)
+  b = b.substring(0, b.length - 1);
+  return a.querySelectorAll(b)
 }, test:function(a) {
-  for(var c in axs.constants.ARIA_PROPERTIES) {
-    var b = "aria-" + c;
-    if(a.hasAttribute(b)) {
-      var d = a.getAttribute(b);
-      if(!axs.utils.getAriaPropertyValue(b, d, a).valid) {
+  for(var b in axs.constants.ARIA_PROPERTIES) {
+    var c = "aria-" + b;
+    if(a.hasAttribute(c)) {
+      var d = a.getAttribute(c);
+      if(!axs.utils.getAriaPropertyValue(c, d, a).valid) {
         return!0
       }
     }
@@ -594,26 +648,26 @@ axs.AuditRule.specs.focusableElementNotVisibleAndNotAriaHidden = {name:"focusabl
 }, code:"AX_FOCUS_01"};
 axs.AuditRule.specs.imagesWithoutAltText = {name:"imagesWithoutAltText", severity:axs.constants.Severity.Warning, relevantNodesSelector:function(a) {
   a = a.querySelectorAll("img");
-  for(var c = [], b = 0;b < a.length;b++) {
-    var d = a[b];
-    axs.utils.isElementOrAncestorHidden(d) || c.push(d)
+  for(var b = [], c = 0;c < a.length;c++) {
+    var d = a[c];
+    axs.utils.isElementOrAncestorHidden(d) || b.push(d)
   }
-  return c
+  return b
 }, test:function(a) {
   return!a.hasAttribute("alt") && "presentation" != a.getAttribute("role")
 }, code:"AX_TEXT_02"};
 axs.AuditRule.specs.lowContrastElements = {name:"lowContrastElements", severity:axs.constants.Severity.Warning, relevantNodesSelector:function(a) {
   return document.evaluate('/html/body//text()[normalize-space(.)!=""]/parent::*[name()!="script"]', a, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
 }, test:function(a) {
-  var c = window.getComputedStyle(a, null);
-  return(a = axs.utils.getContrastRatioForElementWithComputedStyle(c, a)) && axs.utils.isLowContrast(a, c)
+  var b = window.getComputedStyle(a, null);
+  return(a = axs.utils.getContrastRatioForElementWithComputedStyle(b, a)) && axs.utils.isLowContrast(a, b)
 }, code:"AX_COLOR_01"};
 axs.AuditRule.specs.nonExistentAriaLabelledbyElement = {name:"nonExistentAriaLabelledbyElement", severity:axs.constants.Severity.Warning, relevantNodesSelector:function(a) {
   return a.querySelectorAll("[aria-labelledby]")
 }, test:function(a) {
   a = a.getAttribute("aria-labelledby").split(/\s+/);
-  for(var c = 0;c < a.length;c++) {
-    if(!document.getElementById(a[c])) {
+  for(var b = 0;b < a.length;b++) {
+    if(!document.getElementById(a[b])) {
       return!0
     }
   }
@@ -622,24 +676,24 @@ axs.AuditRule.specs.nonExistentAriaLabelledbyElement = {name:"nonExistentAriaLab
 axs.AuditRule.specs.requiredAriaAttributeMissing = {name:"requiredAriaAttributeMissing", severity:axs.constants.Severity.Severe, relevantNodesSelector:function(a) {
   return a.querySelectorAll("[role]")
 }, test:function(a) {
-  var c = axs.utils.getRole(a);
-  if(!c.valid) {
+  var b = axs.utils.getRole(a);
+  if(!b.valid) {
     return!1
   }
-  var c = c.details.requiredPropertiesSet, b;
-  for(b in c) {
-    if(!a.hasAttribute(b)) {
+  var b = b.details.requiredPropertiesSet, c;
+  for(c in b) {
+    if(!a.hasAttribute(c)) {
       return!0
     }
   }
 }, code:"AX_ARIA_03"};
 axs.AuditRule.specs.unfocusableElementsWithOnClick = {name:"unfocusableElementsWithOnClick", severity:axs.constants.Severity.Warning, opt_requiresConsoleAPI:!0, relevantNodesSelector:function(a) {
   a = a.querySelectorAll("*");
-  for(var c = [], b = 0;b < a.length;b++) {
-    var d = a[b];
-    d instanceof HTMLBodyElement || axs.utils.isElementOrAncestorHidden(d) || "click" in getEventListeners(d) && c.push(d)
+  for(var b = [], c = 0;c < a.length;c++) {
+    var d = a[c];
+    d instanceof HTMLBodyElement || axs.utils.isElementOrAncestorHidden(d) || "click" in getEventListeners(d) && b.push(d)
   }
-  return c
+  return b
 }, test:function(a) {
   return!a.hasAttribute("tabindex") && !axs.utils.isElementImplicitlyFocusable(a)
 }, code:"AX_FOCUS_02"};
