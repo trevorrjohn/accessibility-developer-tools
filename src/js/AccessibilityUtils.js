@@ -380,6 +380,188 @@ axs.utils.calculateLuminance = function(color) {
 };
 
 /**
+ * Returns an RGB to YCC conversion matrix for the given kR, kB constants.
+ * @param {number} kR
+ * @param {number} kB
+ * @return {Array.<Array.<number>>}
+ */
+axs.utils.RGBToYCCMatrix = function(kR, kB) {
+    return [
+        [
+            kR,
+            (1 - kR - kB),
+            kB
+        ],
+        [
+            -kR/(2 - 2*kB),
+            (kR + kB - 1)/(2 - 2*kB),
+            (1 - kB)/(2 - 2*kB)
+        ],
+        [
+            (1 - kR)/(2 - 2*kR),
+            (kR + kB - 1)/(2 - 2*kR),
+            -kR/(2 - 2*kR)
+        ]
+    ];
+}
+
+/**
+ * Return the inverse of the given 3x3 matrix.
+ * @param {Array.<Array.<number>>} matrix
+ * @return Array.<Array.<number>> The inverse of the given matrix.
+ */
+axs.utils.invert3x3Matrix = function(matrix) {
+    var a = matrix[0][0];
+    var b = matrix[0][1];
+    var c = matrix[0][2];
+    var d = matrix[1][0];
+    var e = matrix[1][1];
+    var f = matrix[1][2];
+    var g = matrix[2][0];
+    var h = matrix[2][1];
+    var k = matrix[2][2];
+
+    var A = (e*k - f*h);
+    var B = (f*g - d*k);
+    var C = (d*h - e*g);
+    var D = (c*h - b*k);
+    var E = (a*k - c*g);
+    var F = (g*b - a*h);
+    var G = (b*f - c*e);
+    var H = (c*d - a*f);
+    var K = (a*e - b*d);
+
+    var det = a * (e*k - f*h) - b * (k*d - f*g) - c * (d*h - e*g);
+    var z = 1/det;
+    console.log('det', det, 'z', z);
+
+    return axs.utils.scalarMultiplyMatrix([
+        [ A, D, G ],
+        [ B, E, H ],
+        [ C, F, K ]
+    ], z);
+};
+
+axs.utils.scalarMultiplyMatrix = function(matrix, scalar) {
+    var result = [];
+    result[0] = [];
+    result[1] = [];
+    result[2] = [];
+
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            result[i][j] = matrix[i][j] * scalar;
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Multiply the given color vector by the given transformation matrix.
+ * @param {Array.<Array.<number>>} matrix A 3x3 conversion matrix
+ * @param {Array.<number>} vector A 3-element color vector
+ * @return {Array.<number>} A 3-element color vector
+ */
+axs.utils.convertColor = function(matrix, vector) {
+    var a = matrix[0][0];
+    var b = matrix[0][1];
+    var c = matrix[0][2];
+    var d = matrix[1][0];
+    var e = matrix[1][1];
+    var f = matrix[1][2];
+    var g = matrix[2][0];
+    var h = matrix[2][1];
+    var k = matrix[2][2];
+
+    var x = vector[0];
+    var y = vector[1];
+    var z = vector[2];
+
+    return [
+        a*x + b*y + c*z,
+        d*x + e*y + f*z,
+        g*x + h*y + k*z
+    ];
+};
+
+axs.utils.multiplyMatrices = function(matrix1, matrix2) {
+    var result = [];
+    result[0] = [];
+    result[1] = [];
+    result[2] = [];
+
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            result[i][j] = matrix1[i][0] * matrix2[0][j] +
+                           matrix1[i][1] * matrix2[1][j] +
+                           matrix1[i][2] * matrix2[2][j];
+        }
+    }
+    return result;
+}
+
+/**
+ * Convert a given RGB color to YCC.
+ */
+axs.utils.toYCC = function(color) {
+    console.log('converting to YCC:', color);
+    var rSRGB = color.red / 255;
+    var gSRGB = color.green / 255;
+    var bSRGB = color.blue / 255;
+
+    var r = rSRGB <= 0.03928 ? rSRGB / 12.92 : Math.pow(((rSRGB + 0.055)/1.055), 2.4);
+    var g = gSRGB <= 0.03928 ? gSRGB / 12.92 : Math.pow(((gSRGB + 0.055)/1.055), 2.4);
+    var b = bSRGB <= 0.03928 ? bSRGB / 12.92 : Math.pow(((bSRGB + 0.055)/1.055), 2.4);
+    console.log('r', r, 'g', g, 'b', b);
+
+    var kR = 0.2126;
+    var kB = 0.0722;
+
+    var y = kR * r + (1 - kR - kB) * g + kB * b;
+    var cB = 0.5 * (b - y) / (1 - kB);
+    var cR = 0.5 * (r - y) / (1 - kR);
+
+    console.log('conversion matrix', axs.utils.RGBToYCCMatrix(kR, kB));
+
+    return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(kR, kB), [r, g, b]);
+};
+
+/**
+ * Convert a color from a YCC color (as a vector) to an RGB color
+ * @param {Array.<number>} yccColor
+ * @return {axs.utils.Color}
+ */
+axs.utils.fromYCC = function(yccColor) {
+    console.log('converting from YCC:', yccColor);
+    var y = yccColor[0];
+    var cB = yccColor[1];
+    var cR = yccColor[2];
+
+    var kR = 0.2126;
+    var kB = 0.0722;
+
+    var inverseMatrix = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(kR, kB));
+    console.log('inverseMatrix', inverseMatrix);
+    var rgb = axs.utils.convertColor(inverseMatrix, yccColor);
+
+    var r = rgb[0];
+    var g = rgb[1];
+    var b = rgb[2];
+    console.log('r', r, 'g', g, 'b', b);
+
+    var rSRGB = r <= 0.00303949 ? r * 12.92 : (Math.pow(r, (1/2.4)) * 1.055) - 0.55;
+    var gSRGB = g <= 0.00303949 ? g * 12.92 : (Math.pow(g, (1/2.4)) * 1.055) - 0.55;
+    var bSRGB = b <= 0.00303949 ? b * 12.92 : (Math.pow(b, (1/2.4)) * 1.055) - 0.55;
+
+    var red = rSRGB * 255;
+    var green = gSRGB * 255;
+    var blue = bSRGB * 255;
+
+    return new axs.utils.Color(red, green, blue, 1);
+};
+
+/**
  * @param {Element} element
  * @return {?number}
  */

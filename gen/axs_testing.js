@@ -226,6 +226,60 @@ axs.utils.calculateLuminance = function(a) {
   a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
   return 0.2126 * b + 0.7152 * c + 0.0722 * a
 };
+axs.utils.RGBToYCCMatrix = function(a, b) {
+  return[[a, 1 - a - b, b], [-a / (2 - 2 * b), (a + b - 1) / (2 - 2 * b), (1 - b) / (2 - 2 * b)], [(1 - a) / (2 - 2 * a), (a + b - 1) / (2 - 2 * a), -a / (2 - 2 * a)]]
+};
+axs.utils.invert3x3Matrix = function(a) {
+  var b = a[0][0], c = a[0][1], d = a[0][2], e = a[1][0], f = a[1][1], g = a[1][2], h = a[2][0], j = a[2][1], k = a[2][2];
+  a = f * k - g * j;
+  var l = g * h - e * k, m = e * j - f * h, n = d * j - c * k, p = b * k - d * h, q = h * c - b * j, r = c * g - d * f, s = d * e - b * g, t = b * f - c * e, b = b * (f * k - g * j) - c * (k * e - g * h) - d * (e * j - f * h), c = 1 / b;
+  console.log("det", b, "z", c);
+  return axs.utils.scalarMultiplyMatrix([[a, n, r], [l, p, s], [m, q, t]], c)
+};
+axs.utils.scalarMultiplyMatrix = function(a, b) {
+  for(var c = [[], [], []], d = 0;3 > d;d++) {
+    for(var e = 0;3 > e;e++) {
+      c[d][e] = a[d][e] * b
+    }
+  }
+  return c
+};
+axs.utils.convertColor = function(a, b) {
+  var c = b[0], d = b[1], e = b[2];
+  return[a[0][0] * c + a[0][1] * d + a[0][2] * e, a[1][0] * c + a[1][1] * d + a[1][2] * e, a[2][0] * c + a[2][1] * d + a[2][2] * e]
+};
+axs.utils.multiplyMatrices = function(a, b) {
+  for(var c = [[], [], []], d = 0;3 > d;d++) {
+    for(var e = 0;3 > e;e++) {
+      c[d][e] = a[d][0] * b[0][e] + a[d][1] * b[1][e] + a[d][2] * b[2][e]
+    }
+  }
+  return c
+};
+axs.utils.toYCC = function(a) {
+  console.log("converting to YCC:", a);
+  var b = a.red / 255, c = a.green / 255;
+  a = a.blue / 255;
+  b = 0.03928 >= b ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+  c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
+  console.log("r", b, "g", c, "b", a);
+  console.log("conversion matrix", axs.utils.RGBToYCCMatrix(0.2126, 0.0722));
+  return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(0.2126, 0.0722), [b, c, a])
+};
+axs.utils.fromYCC = function(a) {
+  console.log("converting from YCC:", a);
+  var b = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(0.2126, 0.0722));
+  console.log("inverseMatrix", b);
+  var b = axs.utils.convertColor(b, a), c = b[0];
+  a = b[1];
+  b = b[2];
+  console.log("r", c, "g", a, "b", b);
+  c = 0.00303949 >= c ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.55;
+  a = 0.00303949 >= a ? 12.92 * a : 1.055 * Math.pow(a, 1 / 2.4) - 0.55;
+  b = 0.00303949 >= b ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.55;
+  return new axs.utils.Color(255 * c, 255 * a, 255 * b, 1)
+};
 axs.utils.getContrastRatioForElement = function(a) {
   var b = window.getComputedStyle(a, null);
   return axs.utils.getContrastRatioForElementWithComputedStyle(b, a)
@@ -658,6 +712,26 @@ axs.AuditRule.specs.lowContrastElements = {name:"lowContrastElements", heading:"
   var b = window.getComputedStyle(a, null);
   return(a = axs.utils.getContrastRatioForElementWithComputedStyle(b, a)) && axs.utils.isLowContrast(a, b)
 }, code:"AX_COLOR_01"};
+axs.AuditRule.specs.elementsWithMeaningfulBackgroundImage = {name:"elementsWithMeaningfulBackgroundImage", severity:axs.constants.Severity.WARNING, relevantNodesSelector:function(a) {
+  a = a.querySelectorAll("*");
+  for(var b = [], c = 0;c < a.length;c++) {
+    var d = a[c];
+    axs.utils.isElementOrAncestorHidden(d) || b.push(d)
+  }
+  return b
+}, heading:"Meaningful images should not be used in element backgrounds", url:"https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules?ts=1368336558&updated=AuditRules#AX_IMAGE_01:_Meaningful_images_should_not_be_used_in_element_bac", test:function(a) {
+  if(a.textContent && 0 < a.textContent.length) {
+    return!1
+  }
+  a = window.getComputedStyle(a, null);
+  var b = a.backgroundImage;
+  if(!b || "undefined" === b || "none" === b) {
+    return!1
+  }
+  b = parseInt(a.width, 10);
+  a = parseInt(a.height, 10);
+  return 150 > b && 150 > a
+}, code:"AX_IMAGE_01"};
 axs.AuditRule.specs.nonExistentAriaLabelledbyElement = {name:"nonExistentAriaLabelledbyElement", heading:"aria-labelledby attributes should refer to an element which exists in the DOM", url:"https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules#AX_ARIA_02:__aria-labelledby_attributes_should_refer_to_an_eleme", severity:axs.constants.Severity.WARNING, relevantNodesSelector:function(a) {
   return a.querySelectorAll("[aria-labelledby]")
 }, test:function(a) {
@@ -669,7 +743,7 @@ axs.AuditRule.specs.nonExistentAriaLabelledbyElement = {name:"nonExistentAriaLab
   }
   return!1
 }, code:"AX_ARIA_02"};
-axs.AuditRule.specs.pageWithoutTitle = {name:"pageWithoutTitle", heading:"Web pages have titles that describe topic or purpose", url:"", severity:axs.constants.Severity.WARNING, relevantNodesSelector:function(a) {
+axs.AuditRule.specs.pageWithoutTitle = {name:"pageWithoutTitle", heading:"The web page should have a title that describes topic or purpose", url:"", severity:axs.constants.Severity.WARNING, relevantNodesSelector:function(a) {
   return a
 }, test:function(a) {
   a = a.querySelector("head");
