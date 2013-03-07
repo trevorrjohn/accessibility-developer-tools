@@ -76,12 +76,19 @@ axs.properties.getContrastRatioProperties = function(element) {
     if (axs.utils.isLowContrast(value, style)) {
         contrastRatioProperties['alert'] = true;
         // TODO(aboxhall): handle clipping by changing bg instead, or ...
-        var bgLuminance = axs.utils.calculateLuminance(bgColor);
-        var desiredFgLuminance = bgLuminance + (axs.utils.isLargeFont(style) ? 3.0 : 4.5);
+/*        var bgLuminance = axs.utils.calculateLuminance(bgColor);
+        var fgLuminance = axs.utils.calculateLuminance(fgColor);
+        if (bgLuminance > fgLuminance)
+            var desiredFgLuminance = ((bgLuminance + 0.05) / (axs.utils.isLargeFont(style) ? 3.0 : 4.5)) - 0.05;
+        else
+            var desiredFgLuminance = ((bgLuminance + 0.05) * (axs.utils.isLargeFont(style) ? 3.0 : 4.5)) - 0.05;
         var fgYCC = axs.utils.toYCC(fgColor);
         var newFgYCC = [ desiredFgLuminance, fgYCC[1], fgYCC[2] ];
         var newFgColor = axs.utils.fromYCC(newFgYCC);
-        contrastRatioProperties['suggestedFg'] = axs.utils.colorToString(newFgColor);
+        contrastRatioProperties['suggestedFg'] = axs.utils.colorToString(newFgColor); */
+        var suggestedColors = axs.utils.suggestColors(bgColor, fgColor, value, style);
+        if (suggestedColors && Object.keys(suggestedColors).length)
+            contrastRatioProperties['suggestedColors'] = suggestedColors;
     }
     return contrastRatioProperties;
 };
@@ -95,23 +102,9 @@ axs.properties.getContrastRatioProperties = function(element) {
 axs.properties.findTextAlternatives = function(node, textAlternatives, opt_recursive) {
     var recursive = opt_recursive || false;
 
-    /** @type {Element} */ var element;
-    switch (node.nodeType) {
-    case Node.COMMENT_NODE:
-        return null;  // Skip comments
-    case Node.ELEMENT_NODE:
-        element = /** @type {Element} */ node;
-        if (element.tagName.toLowerCase() == 'script') {
-            return null;  // Skip script elements
-        }
-        break;
-    case Node.TEXT_NODE:
-        element = node.parentElement;
-        break;
-    default:
-        console.warn('Unhandled node type: ', node.nodeType);
+    /** @type {Element} */ var element = axs.utils.asElement(node);
+    if (!element)
         return null;
-    }
 
     // 1. Skip hidden elements unless the author specifies to use them via an aria-labelledby or
     // aria-describedby being used in the current computation.
@@ -166,7 +159,7 @@ axs.properties.findTextAlternatives = function(node, textAlternatives, opt_recur
         // following manner:
         if (element instanceof HTMLInputElement) {
             // If the embedded control is a text field, use its value.
-            var inputElement = /** @type {HTMLInputElement} */ element;
+            var inputElement = /** (@type {HTMLInputElement}) */ element;
             if (inputElement.type == 'text') {
                 if (inputElement.value && inputElement.value.length > 0)
                     textAlternatives['controlValue'] = { 'text': inputElement.value };
@@ -423,7 +416,7 @@ axs.properties.getTextFromHostLangaugeAttributes = function(element, textAlterna
         var labelWrappedValue = {};
         while (parent) {
             if (parent.tagName.toLowerCase() == 'label') {
-                var parentLabel = /** @type {HTMLLabelElement} */ parent;
+                var parentLabel = /** (@type {HTMLLabelElement}) */ parent;
                 if (parentLabel.control == element) {
                     labelWrappedValue.type = 'element';
                     labelWrappedValue.text = axs.properties.findTextAlternatives(parentLabel, {}, true);
@@ -623,11 +616,7 @@ axs.properties.getTrackElements = function(element, kind) {
  * @return {Object.<string, Object>}
  */
 axs.properties.getAllProperties = function(node) {
-    /** @type {Element} */ var element;
-    if (node.nodeType == Node.ELEMENT_NODE)
-        element = /** @type {Element} */ node;
-    if (node.nodeType == Node.TEXT_NODE)
-        element = node.parentElement;
+    /** @type {Element} */ var element = axs.utils.asElement(node);
     if (!element)
         return {};
 
