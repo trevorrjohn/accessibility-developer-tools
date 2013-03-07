@@ -212,7 +212,30 @@ axs.utils.parseColor = function(a) {
   return(b = a.match(/^rgba\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)/)) ? (d = parseInt(b[4], 10), a = parseInt(b[1], 10), c = parseInt(b[2], 10), b = parseInt(b[3], 10), new axs.utils.Color(a, c, b, d)) : null
 };
 axs.utils.colorToString = function(a) {
-  return"rgba(" + [a.red, a.green, a.blue, a.alpha].join() + ")"
+  return 1 == a.alpha ? "#" + a.red.toString(16) + a.green.toString(16) + a.blue.toString(16) : "rgba(" + [a.red, a.green, a.blue, a.alpha].join() + ")"
+};
+axs.utils.suggestColors = function(a, b, c, d) {
+  if(!axs.utils.isLowContrast(c, d)) {
+    return null
+  }
+  c = {};
+  var e = axs.utils.calculateLuminance(a), f = axs.utils.calculateLuminance(b), g = axs.utils.isLargeFont(d) ? 3 : 4.5, h = axs.utils.isLargeFont(d) ? 4.5 : 7;
+  e > f ? (d = (e + 0.05) / g - 0.05, e = (e + 0.05) / h - 0.05, g = g * (f + 0.05) - 0.05, f = h * (f + 0.05) - 0.05) : (d = g * (e + 0.05) - 0.05, e = h * (e + 0.05) - 0.05, g = (f + 0.05) / g - 0.05, f = (f + 0.05) / h - 0.05);
+  h = axs.utils.toYCC(b);
+  if(21 >= d && 0 <= d) {
+    var j = [d, h[1], h[2]];
+    d = axs.utils.fromYCC(j);
+    255 >= d.red && (255 >= d.green && 255 >= d.blue && 0 <= d.red && 0 <= d.green && 0 <= d.blue) && (c.suggestedFgAA = axs.utils.colorToString(d), c.suggestedBgAA = axs.utils.colorToString(a))
+  }
+  if(21 >= e && 0 <= e) {
+    var k = [e, h[1], h[2]];
+    d = axs.utils.fromYCC(k);
+    255 >= d.red && (255 >= d.green && 255 >= d.blue && 0 <= d.red && 0 <= d.green && 0 <= d.blue) && (c.suggestedFgAAA = axs.utils.colorToString(d), c.suggestedBgAAA = axs.utils.colorToString(a))
+  }
+  axs.utils.toYCC(a);
+  !c.suggestedFgAA && (21 >= g && 0 <= g) && (a = axs.utils.fromYCC(j), 255 >= a.red && (255 >= a.green && 255 >= a.blue && 0 <= a.red && 0 <= a.green && 0 <= a.blue) && (c.suggestedBgAA = axs.utils.colorToString(a), c.suggestedFgAA = axs.utils.colorToString(b)));
+  !c.suggestedFgAAA && (21 >= f && 0 <= f) && (k = axs.utils.fromYCC(k), 255 >= k.red && (255 >= k.green && 255 >= k.blue && 0 <= k.red && 0 >= k.green && 0 <= k.blue) && (c.suggestedBgAAA = axs.utils.colorToString(k), c.suggestedFgAAA = axs.utils.colorToString(b)));
+  return c
 };
 axs.utils.flattenColors = function(a, b) {
   var c = a.alpha;
@@ -230,11 +253,9 @@ axs.utils.RGBToYCCMatrix = function(a, b) {
   return[[a, 1 - a - b, b], [-a / (2 - 2 * b), (a + b - 1) / (2 - 2 * b), (1 - b) / (2 - 2 * b)], [(1 - a) / (2 - 2 * a), (a + b - 1) / (2 - 2 * a), -b / (2 - 2 * a)]]
 };
 axs.utils.invert3x3Matrix = function(a) {
-  var b = a[0][0], c = a[0][1], d = a[0][2], e = a[1][0], f = a[1][1], g = a[1][2], h = a[2][0], j = a[2][1], k = a[2][2];
-  a = f * k - g * j;
-  var l = g * h - e * k, m = e * j - f * h, n = d * j - c * k, p = b * k - d * h, q = h * c - b * j, r = c * g - d * f, s = d * e - b * g, t = b * f - c * e, b = b * (f * k - g * j) - c * (k * e - g * h) + d * (e * j - f * h), c = 1 / b;
-  console.log("det", b, "z", c);
-  return axs.utils.scalarMultiplyMatrix([[a, n, r], [l, p, s], [m, q, t]], c)
+  var b = a[0][0], c = a[0][1], d = a[0][2], e = a[1][0], f = a[1][1], g = a[1][2], h = a[2][0], j = a[2][1];
+  a = a[2][2];
+  return axs.utils.scalarMultiplyMatrix([[f * a - g * j, d * j - c * a, c * g - d * f], [g * h - e * a, b * a - d * h, d * e - b * g], [e * j - f * h, h * c - b * j, b * f - c * e]], 1 / (b * (f * a - g * j) - c * (a * e - g * h) + d * (e * j - f * h)))
 };
 axs.utils.scalarMultiplyMatrix = function(a, b) {
   for(var c = [[], [], []], d = 0;3 > d;d++) {
@@ -257,28 +278,24 @@ axs.utils.multiplyMatrices = function(a, b) {
   return c
 };
 axs.utils.toYCC = function(a) {
-  console.log("converting to YCC:", a);
   var b = a.red / 255, c = a.green / 255;
   a = a.blue / 255;
   b = 0.03928 >= b ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
   c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
-  console.log("r", b, "g", c, "b", a);
-  console.log("conversion matrix", axs.utils.RGBToYCCMatrix(0.2126, 0.0722));
   return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(0.2126, 0.0722), [b, c, a])
 };
 axs.utils.fromYCC = function(a) {
-  console.log("converting from YCC:", a);
-  var b = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(0.2126, 0.0722));
-  console.log("inverseMatrix", b);
-  var b = axs.utils.convertColor(b, a), c = b[0];
+  var b = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(0.2126, 0.0722)), b = axs.utils.convertColor(b, a), c = b[0];
   a = b[1];
   b = b[2];
-  console.log("r", c, "g", a, "b", b);
   c = 0.00303949 >= c ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
   a = 0.00303949 >= a ? 12.92 * a : 1.055 * Math.pow(a, 1 / 2.4) - 0.055;
   b = 0.00303949 >= b ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.055;
-  return new axs.utils.Color(255 * c, 255 * a, 255 * b, 1)
+  c = Math.round(255 * c);
+  a = Math.round(255 * a);
+  b = Math.round(255 * b);
+  return new axs.utils.Color(c, a, b, 1)
 };
 axs.utils.getContrastRatioForElement = function(a) {
   var b = window.getComputedStyle(a, null);
