@@ -689,6 +689,7 @@ axs.utils.fromYCC = function(yccColor) {
     var gSRGB = g <= 0.00303949 ? (g * 12.92) : (Math.pow(g, (1/2.4)) * 1.055) - 0.055;
     var bSRGB = b <= 0.00303949 ? (b * 12.92) : (Math.pow(b, (1/2.4)) * 1.055) - 0.055;
 
+    console.log('r', rSRGB * 255, 'g', gSRGB * 255, 'b', bSRGB * 255);
     var red = Math.min(Math.max(Math.round(rSRGB * 255), 0), 255);
     var green = Math.min(Math.max(Math.round(gSRGB * 255), 0), 255);
     var blue = Math.min(Math.max(Math.round(bSRGB * 255), 0), 255);
