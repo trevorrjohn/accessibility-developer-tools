@@ -239,9 +239,18 @@ axs.utils.isLargeFont = function(style) {
     var matches = fontSize.match(/(\d+)px/);
     if (matches) {
         var fontSizePx = parseInt(matches[1], 10);
-        if (bold && fontSizePx >= 19.2 || fontSizePx >= 24) // fudged!
-            return true;
-        return false;
+        var bodyStyle = window.getComputedStyle(document.body, null);
+        var bodyFontSize = bodyStyle.fontSize;
+        matches = bodyFontSize.match(/(\d+)px/);
+        if (matches) {
+            var bodyFontSizePx = parseInt(matches[1], 10);
+            var boldLarge = bodyFontSizePx * 1.2;
+            var large = bodyFontSizePx * 1.5;
+        } else {
+            var boldLarge = 19.2;
+            var large = 24;
+        }
+        return (bold && fontSizePx >= boldLarge || fontSizePx >= large);
     }
     matches = fontSize.match(/(\d+)em/);
     if (matches) {
@@ -393,14 +402,11 @@ axs.utils.colorToString = function(color) {
 };
 
 axs.utils.luminanceFromContrastRatio = function(luminance, contrast, higher) {
-    console.log('luminanceFromContrastRatio', luminance, contrast, higher);
     if (higher) {
         var newLuminance = (luminance + 0.05) * contrast - 0.05;
-        console.log('newLuminance', newLuminance, axs.utils.luminanceRatio(luminance, newLuminance));
         return newLuminance;
     } else {
         var newLuminance = (luminance + 0.05) / contrast - 0.05;
-        console.log('newLuminance', newLuminance, axs.utils.luminanceRatio(luminance, newLuminance));
         return newLuminance;
     }
 };
@@ -448,11 +454,9 @@ axs.utils.suggestColors = function(bgColor, fgColor, contrastRatio, style) {
         var newFgColorAA = axs.utils.translateColor(fgYCC, desiredFgLuminanceAA);
         var newContrastRatioAA = axs.utils.calculateContrastRatio(newFgColorAA, bgColor);
         var newLuminance = axs.utils.calculateLuminance(newFgColorAA);
-        console.log('desiredFgLuminanceAA', desiredFgLuminanceAA, 'actual', newLuminance);
         var suggestedColorsAA = {}
         suggestedColorsAA['fg'] = axs.utils.colorToString(newFgColorAA);
         suggestedColorsAA['bg'] = axs.utils.colorToString(bgColor);
-        console.log('newContrastRatioAA', newContrastRatioAA);
         suggestedColorsAA['contrast'] = newContrastRatioAA.toFixed(2);
         colors['AA'] = suggestedColorsAA;
     }
@@ -685,7 +689,6 @@ axs.utils.fromYCC = function(yccColor) {
     var gSRGB = g <= 0.00303949 ? (g * 12.92) : (Math.pow(g, (1/2.4)) * 1.055) - 0.055;
     var bSRGB = b <= 0.00303949 ? (b * 12.92) : (Math.pow(b, (1/2.4)) * 1.055) - 0.055;
 
-    console.log('r', rSRGB * 255, 'g', gSRGB * 255, 'b', bSRGB * 255);
     var red = Math.min(Math.max(Math.round(rSRGB * 255), 0), 255);
     var green = Math.min(Math.max(Math.round(gSRGB * 255), 0), 255);
     var blue = Math.min(Math.max(Math.round(bSRGB * 255), 0), 255);
