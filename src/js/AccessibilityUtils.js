@@ -414,16 +414,14 @@ axs.utils.translateColor = function(ycc, luminance) {
 
     var d = luminance - oldLuminance;
     var scale = d / (endpoint - oldLuminance)
-    console.log('oldLuminance', oldLuminance, 'luminance', luminance, 'endpoint', endpoint,
-                'd', d, 'endpoint - oldLuminance', endpoint - oldLuminance, 'scale', scale,
-                'ycc[1]', ycc[1], 'ycc[1] - ycc[1] * scale', ycc[1] - ycc[1] * scale, 'ycc[2]', ycc[2],
-                'ycc[2] - ycc[2] * scale', ycc[2] - ycc[2] * scale);
+
     /** @type {Array.<number>} */ var translatedColor = [ luminance,
                                                           ycc[1] - ycc[1] * scale,
                                                           ycc[2] - ycc[2] * scale ];
     var rgb = axs.utils.fromYCC(translatedColor);
     return rgb;
-}
+};
+
 /**
  * @param {axs.utils.Color} fgColor
  * @param {axs.utils.Color} bgColor
@@ -432,86 +430,66 @@ axs.utils.translateColor = function(ycc, luminance) {
  * @return {Object}
  */
 axs.utils.suggestColors = function(bgColor, fgColor, contrastRatio, style) {
-    if (!axs.utils.isLowContrast(contrastRatio, style))
+    if (!axs.utils.isLowContrast(contrastRatio, style, true))
         return null;
     var colors = {};
-    // TODO(aboxhall): handle clipping by changing bg instead, or ...
     var bgLuminance = axs.utils.calculateLuminance(bgColor);
     var fgLuminance = axs.utils.calculateLuminance(fgColor);
+
     var levelAAContrast = axs.utils.isLargeFont(style) ? 3.0 : 4.5;
     var levelAAAContrast = axs.utils.isLargeFont(style) ? 4.5 : 7.0;
-    console.log('levelAAContrast', levelAAContrast, 'levelAAAContrast', levelAAAContrast);
     var fgLuminanceIsHigher = fgLuminance > bgLuminance;
-    var desiredFgLuminanceAA = axs.utils.luminanceFromContrastRatio(bgLuminance, levelAAContrast, fgLuminanceIsHigher);
-    var desiredContrastRatioAA = (Math.max(desiredFgLuminanceAA, bgLuminance) + 0.05) /
-        (Math.min(desiredFgLuminanceAA, bgLuminance) + 0.05);
-    var desiredFgLuminanceAAA = axs.utils.luminanceFromContrastRatio(bgLuminance, levelAAAContrast, fgLuminanceIsHigher);
-    var desiredContrastRatioAAA = (Math.max(desiredFgLuminanceAAA, bgLuminance) + 0.05) /
-        (Math.min(desiredFgLuminanceAAA, bgLuminance) + 0.05);
-    console.log('desiredContrastRatioAA', desiredContrastRatioAA, 'desiredContrastRatioAAA', desiredContrastRatioAAA);
+    var desiredFgLuminanceAA = axs.utils.luminanceFromContrastRatio(bgLuminance, levelAAContrast + 0.02, fgLuminanceIsHigher);
+    var desiredFgLuminanceAAA = axs.utils.luminanceFromContrastRatio(bgLuminance, levelAAAContrast + 0.02, fgLuminanceIsHigher);
     var fgYCC = axs.utils.toYCC(fgColor);
-    console.log('fgColor', fgColor, 'bgColor', bgColor, 'fgLuminance', fgLuminance, 'bgLuminance', bgLuminance,
-                'desiredFgLuminanceAA', desiredFgLuminanceAA, 'desiredFgLuminanceAAA', desiredFgLuminanceAAA);
 
-    if (desiredFgLuminanceAA <= 1 && desiredFgLuminanceAA >= 0) {
-        console.log('about to translateColor');
+    if (axs.utils.isLowContrast(contrastRatio, style, false) &&
+        desiredFgLuminanceAA <= 1 && desiredFgLuminanceAA >= 0) {
         var newFgColorAA = axs.utils.translateColor(fgYCC, desiredFgLuminanceAA);
-        console.log('translatedColor');
         var newContrastRatioAA = axs.utils.calculateContrastRatio(newFgColorAA, bgColor);
+        var newLuminance = axs.utils.calculateLuminance(newFgColorAA);
+        console.log('desiredFgLuminanceAA', desiredFgLuminanceAA, 'actual', newLuminance);
+        var suggestedColorsAA = {}
+        suggestedColorsAA['fg'] = axs.utils.colorToString(newFgColorAA);
+        suggestedColorsAA['bg'] = axs.utils.colorToString(bgColor);
         console.log('newContrastRatioAA', newContrastRatioAA);
-        /*
-        while (newContrastRatioAA < levelAAContrast) {
-            console.log('translating again');
-            newFgColorAA = axs.utils.translateColor(axs.utils.toYCC(newFgColorAA), desiredFgLuminanceAA);
-            console.log('translated');
-            newContrastRatioAA = axs.utils.calculateContrastRatio(newFgColorAA, bgColor);
-            console.log('newContrastRatioAA', newContrastRatioAA);
-        }
-         */
-        colors['suggestedFgAA'] = axs.utils.colorToString(newFgColorAA);
-        colors['suggestedBgAA'] = axs.utils.colorToString(bgColor);
-        console.log('so far', colors);
+        suggestedColorsAA['contrast'] = newContrastRatioAA.toFixed(2);
+        colors['AA'] = suggestedColorsAA;
     }
-    if (desiredFgLuminanceAAA <= 1 && desiredFgLuminanceAAA >= 0) {
+    if (axs.utils.isLowContrast(contrastRatio, style, true) &&
+        desiredFgLuminanceAAA <= 1 && desiredFgLuminanceAAA >= 0) {
         var newFgColorAAA = axs.utils.translateColor(fgYCC, desiredFgLuminanceAAA);
         var newContrastRatioAAA = axs.utils.calculateContrastRatio(newFgColorAAA, bgColor);
-/*
-        while (newContrastRatioAAA < levelAAAContrast) {
-            newFgColorAAA = axs.utils.translateColor(axs.utils.toYCC(newFgColorAAA), desiredFgLuminanceAAA);
-            newContrastRatioAAA = axs.utils.calculateContrastRatio(newFgColorAAA, bgColor);
-        }
-*/
-        colors['suggestedFgAAA'] = axs.utils.colorToString(newFgColorAAA);
-        colors['suggestedBgAAA'] = axs.utils.colorToString(bgColor);
+        var suggestedColorsAAA = {};
+        suggestedColorsAAA['fg'] = axs.utils.colorToString(newFgColorAAA);
+        suggestedColorsAAA['bg'] = axs.utils.colorToString(bgColor);
+        suggestedColorsAAA['contrast'] = newContrastRatioAAA.toFixed(2);
+        colors['AAA'] = suggestedColorsAAA;
     }
-    var desiredBgLuminanceAA = axs.utils.luminanceFromContrastRatio(fgLuminance, levelAAContrast, !fgLuminanceIsHigher);
-    var desiredBgLuminanceAAA = axs.utils.luminanceFromContrastRatio(fgLuminance, levelAAAContrast, !fgLuminanceIsHigher);
+    var desiredBgLuminanceAA = axs.utils.luminanceFromContrastRatio(fgLuminance, levelAAContrast + 0.02, !fgLuminanceIsHigher);
+    var desiredBgLuminanceAAA = axs.utils.luminanceFromContrastRatio(fgLuminance, levelAAAContrast + 0.02, !fgLuminanceIsHigher);
     var bgLuminanceBoundary = fgLuminanceIsHigher ? 0 : 1;
     var bgYCC = axs.utils.toYCC(bgColor);
-    console.log('desiredBgLuminanceAA', desiredBgLuminanceAA, 'desiredBgLuminanceAAA', desiredBgLuminanceAAA);
-    if (!('suggestedFgAA' in colors) && desiredBgLuminanceAA <= 1 && desiredBgLuminanceAA >= 0) {
+
+    if (!('AA' in colors) && axs.utils.isLowContrast(contrastRatio, style, false) &&
+        desiredBgLuminanceAA <= 1 && desiredBgLuminanceAA >= 0) {
         var newBgColorAA = axs.utils.translateColor(bgYCC, desiredBgLuminanceAA);
         var newContrastRatioAA = axs.utils.calculateContrastRatio(fgColor, newBgColorAA);
-/*
-        while (newContrastRatioAA < levelAAContrast) {
-            newBgColorAA = axs.utils.translateColor(axs.utils.toYCC(newBgColorAA), desiredBgLuminanceAA);
-            newContrastRatioAA = axs.utils.calculateContrastRatio(fgColor, newBgColorAA);
-        }
-*/
-        colors['suggestedBgAA'] = axs.utils.colorToString(newBgColorAA);
-        colors['suggestedFgAA'] = axs.utils.colorToString(fgColor);
+        var suggestedColorsAA = {};
+        suggestedColorsAA['bg'] = axs.utils.colorToString(newBgColorAA);
+        suggestedColorsAA['fg'] = axs.utils.colorToString(fgColor);
+        suggestedColorsAA['contrast'] = newContrastRatioAA.toFixed(2);
+        colors['AA'] = suggestedColorsAA;
     }
-    if (!colors['suggestedFgAAA'] && desiredBgLuminanceAAA <= 1 && desiredBgLuminanceAAA >= 0) {
+    if (!('AAA' in colors) && axs.utils.isLowContrast(contrastRatio, style, true) &&
+        desiredBgLuminanceAAA <= 1 && desiredBgLuminanceAAA >= 0) {
         var newBgColorAAA = axs.utils.translateColor(bgYCC, desiredBgLuminanceAAA);
         var newContrastRatioAAA = axs.utils.calculateContrastRatio(fgColor, newBgColorAAA);
-/*
-        while (newContrastRatioAAA < levelAAAContrast) {
-            newBgColorAAA = axs.utils.translateColor(axs.utils.toYCC(newBgColorAAA), desiredBgLuminanceAAA);
-            newContrastRatioAAA = axs.utils.calculateContrastRatio(fgColor, newBgColorAAA);
-        }
-*/
-        colors['suggestedBgAAA'] = axs.utils.colorToString(newBgColorAAA);
-        colors['suggestedFgAAA'] = axs.utils.colorToString(fgColor);
+        var suggestedColorsAAA = {};
+        suggestedColorsAAA['bg'] = axs.utils.colorToString(newBgColorAAA);
+        suggestedColorsAAA['fg'] = axs.utils.colorToString(fgColor);
+        suggestedColorsAAA['contrast'] = newContrastRatioAAA.toFixed(2);
+        colors['AAA'] = suggestedColorsAAA;
     }
     return colors;
 }
@@ -628,6 +606,11 @@ axs.utils.scalarMultiplyMatrix = function(matrix, scalar) {
     return result;
 }
 
+axs.utils.kR = 0.2126;
+axs.utils.kB = 0.0722;
+axs.utils.YCC_MATRIX = axs.utils.RGBToYCCMatrix(axs.utils.kR, axs.utils.kB);
+axs.utils.INVERTED_YCC_MATRIX = axs.utils.invert3x3Matrix(axs.utils.YCC_MATRIX);
+
 /**
  * Multiply the given color vector by the given transformation matrix.
  * @param {Array.<Array.<number>>} matrix A 3x3 conversion matrix
@@ -684,16 +667,7 @@ axs.utils.toYCC = function(color) {
     var g = gSRGB <= 0.03928 ? gSRGB / 12.92 : Math.pow(((gSRGB + 0.055)/1.055), 2.4);
     var b = bSRGB <= 0.03928 ? bSRGB / 12.92 : Math.pow(((bSRGB + 0.055)/1.055), 2.4);
 
-/*    var kR = 0.2126;
-    var kB = 0.0722; */
-    var kR = 0.299;
-    var kB = 0.114;
-
-    var y = kR * r + (1 - kR - kB) * g + kB * b;
-    var cB = 0.5 * (b - y) / (1 - kB);
-    var cR = 0.5 * (r - y) / (1 - kR);
-
-    return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(kR, kB), [r, g, b]);
+    return axs.utils.convertColor(axs.utils.YCC_MATRIX, [r, g, b]);
 };
 
 /**
@@ -702,15 +676,7 @@ axs.utils.toYCC = function(color) {
  * @return {axs.utils.Color}
  */
 axs.utils.fromYCC = function(yccColor) {
-    var y = yccColor[0];
-    var cB = yccColor[1];
-    var cR = yccColor[2];
-
-    var kR = 0.2126;
-    var kB = 0.0722;
-
-    var inverseMatrix = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(kR, kB));
-    var rgb = axs.utils.convertColor(inverseMatrix, yccColor);
+    var rgb = axs.utils.convertColor(axs.utils.INVERTED_YCC_MATRIX, yccColor);
 
     var r = rgb[0];
     var g = rgb[1];
@@ -719,6 +685,7 @@ axs.utils.fromYCC = function(yccColor) {
     var gSRGB = g <= 0.00303949 ? (g * 12.92) : (Math.pow(g, (1/2.4)) * 1.055) - 0.055;
     var bSRGB = b <= 0.00303949 ? (b * 12.92) : (Math.pow(b, (1/2.4)) * 1.055) - 0.055;
 
+    console.log('r', rSRGB * 255, 'g', gSRGB * 255, 'b', bSRGB * 255);
     var red = Math.min(Math.max(Math.round(rSRGB * 255), 0), 255);
     var green = Math.min(Math.max(Math.round(gSRGB * 255), 0), 255);
     var blue = Math.min(Math.max(Math.round(bSRGB * 255), 0), 255);
@@ -785,10 +752,14 @@ axs.utils.isNativeTextElement = function(element) {
 /**
  * @param {number} contrastRatio
  * @param {CSSStyleDeclaration} style
+ * @param {boolean=} opt_strict Whether to use AA (false) or AAA (true) level
  * @return {boolean}
  */
-axs.utils.isLowContrast = function(contrastRatio, style) {
-    return contrastRatio < 3.0 || (!axs.utils.isLargeFont(style) && contrastRatio < 4.5);
+axs.utils.isLowContrast = function(contrastRatio, style, opt_strict) {
+    if (!opt_strict)
+        return contrastRatio < 3.0 || (!axs.utils.isLargeFont(style) && contrastRatio < 4.5);
+    else
+        return contrastRatio < 4.5 || (!axs.utils.isLargeFont(style) && contrastRatio < 7.0);
 };
 
 /**
