@@ -73,23 +73,11 @@ axs.properties.getContrastRatioProperties = function(element) {
     if (!value)
         return null;
     contrastRatioProperties['value'] = value.toFixed(2);
-    if (axs.utils.isLowContrast(value, style)) {
+    if (axs.utils.isLowContrast(value, style))
         contrastRatioProperties['alert'] = true;
-        // TODO(aboxhall): handle clipping by changing bg instead, or ...
-/*        var bgLuminance = axs.utils.calculateLuminance(bgColor);
-        var fgLuminance = axs.utils.calculateLuminance(fgColor);
-        if (bgLuminance > fgLuminance)
-            var desiredFgLuminance = ((bgLuminance + 0.05) / (axs.utils.isLargeFont(style) ? 3.0 : 4.5)) - 0.05;
-        else
-            var desiredFgLuminance = ((bgLuminance + 0.05) * (axs.utils.isLargeFont(style) ? 3.0 : 4.5)) - 0.05;
-        var fgYCC = axs.utils.toYCC(fgColor);
-        var newFgYCC = [ desiredFgLuminance, fgYCC[1], fgYCC[2] ];
-        var newFgColor = axs.utils.fromYCC(newFgYCC);
-        contrastRatioProperties['suggestedFg'] = axs.utils.colorToString(newFgColor); */
-        var suggestedColors = axs.utils.suggestColors(bgColor, fgColor, value, style);
-        if (suggestedColors && Object.keys(suggestedColors).length)
-            contrastRatioProperties['suggestedColors'] = suggestedColors;
-    }
+    var suggestedColors = axs.utils.suggestColors(bgColor, fgColor, value, style);
+    if (suggestedColors && Object.keys(suggestedColors).length)
+        contrastRatioProperties['suggestedColors'] = suggestedColors;
     return contrastRatioProperties;
 };
 
