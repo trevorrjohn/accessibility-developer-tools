@@ -82,6 +82,7 @@ for(var propertyName in axs.constants.ARIA_PROPERTIES) {
 }
 axs.constants.Severity = {INFO:"Info", WARNING:"Warning", SEVERE:"Severe"};
 axs.constants.AuditResult = {PASS:"PASS", FAIL:"FAIL", NA:"NA"};
+axs.constants.InlineElements = {TT:!0, I:!0, B:!0, BIG:!0, SMALL:!0, EM:!0, STRONG:!0, DFN:!0, CODE:!0, SAMP:!0, KBD:!0, VAR:!0, CITE:!0, ABBR:!0, ACRONYM:!0, A:!0, IMG:!0, OBJECT:!0, BR:!0, SCRIPT:!0, MAP:!0, Q:!0, SUB:!0, SUP:!0, SPAN:!0, BDO:!0, INPUT:!0, SELECT:!0, TEXTAREA:!0, LABEL:!0, BUTTON:!0};
 axs.utils = {};
 axs.utils.FOCUSABLE_ELEMENTS_SELECTOR = "input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href],iframe,[tabindex]";
 axs.utils.Color = function(a, b, c, d) {
@@ -300,12 +301,20 @@ axs.utils.isElementHidden = function(a) {
 axs.utils.isElementOrAncestorHidden = function(a) {
   return axs.utils.isElementHidden(a) ? !0 : a.parentElement ? axs.utils.isElementOrAncestorHidden(a.parentElement) : !1
 };
-axs.utils.getRole = function(a) {
+axs.utils.isInlineElement = function(a) {
+  a = a.tagName.toUpperCase();
+  return axs.constants.InlineElements[a]
+};
+axs.utils.getRoles = function(a) {
   if(!a.hasAttribute("role")) {
     return!1
   }
-  a = a.getAttribute("role");
-  return axs.constants.ARIA_ROLES[a] ? {name:a, details:axs.constants.ARIA_ROLES[a], valid:!0} : {name:a, valid:!1}
+  a = a.getAttribute("role").split(" ");
+  for(var b = [], c = !0, d = 0;d < a.length;d++) {
+    var e = a[d];
+    axs.constants.ARIA_ROLES[e] ? b.push({name:e, details:axs.constants.ARIA_ROLES[e], valid:!0}) : (b.push({name:e, valid:!1}), c = !1)
+  }
+  return{roles:b, valid:c}
 };
 axs.utils.getAriaPropertyValue = function(a, b, c) {
   var d = a.replace(/^aria-/, ""), e = axs.constants.ARIA_PROPERTIES[d], d = {name:a, rawValue:b};
@@ -439,6 +448,289 @@ axs.utils.getQuerySelectorText = function(a) {
     }
   }
   return""
+};
+axs.properties = {};
+axs.properties.TEXT_CONTENT_XPATH = 'text()[normalize-space(.)!=""]/parent::*[name()!="script"]';
+axs.properties.getFocusProperties = function(a) {
+  a = a.getAttribute("tabindex");
+  return void 0 != a ? {tabindex:{value:a, valid:!0}} : null
+};
+axs.properties.getColorProperties = function(a) {
+  var b = {};
+  b.contrastRatio = axs.properties.getContrastRatioProperties(a);
+  return!b.contrastRatio ? null : b
+};
+axs.properties.getContrastRatioProperties = function(a) {
+  var b = document.evaluate(axs.properties.TEXT_CONTENT_XPATH, a, null, XPathResult.ANY_TYPE, null).iterateNext();
+  if(!b || b != a) {
+    return null
+  }
+  var b = {}, c = window.getComputedStyle(a, null), d = axs.utils.getBgColor(c, a);
+  if(!d) {
+    return null
+  }
+  b.backgroundColor = axs.utils.colorToString(d);
+  d = axs.utils.getFgColor(c, d);
+  b.foregroundColor = axs.utils.colorToString(d);
+  a = axs.utils.getContrastRatioForElementWithComputedStyle(c, a);
+  if(!a) {
+    return null
+  }
+  b.value = a.toFixed(2);
+  axs.utils.isLowContrast(a, c) && (b.alert = !0);
+  return b
+};
+axs.properties.findTextAlternatives = function(a, b, c) {
+  var d = c || !1;
+  switch(a.nodeType) {
+    case Node.COMMENT_NODE:
+      return null;
+    case Node.ELEMENT_NODE:
+      c = a;
+      if("script" == c.tagName.toLowerCase()) {
+        return null
+      }
+      break;
+    case Node.TEXT_NODE:
+      c = a.parentElement;
+      break;
+    default:
+      return console.warn("Unhandled node type: ", a.nodeType), null
+  }
+  if(!d && axs.utils.isElementOrAncestorHidden(c)) {
+    return null
+  }
+  if(a.nodeType == Node.TEXT_NODE) {
+    return c = {type:"text"}, c.text = a.textContent, c.lastWord = axs.properties.getLastWord(c.text), b.content = c, a.textContent
+  }
+  a = null;
+  d || (a = axs.properties.getTextFromAriaLabelledby(c, b));
+  if(c.hasAttribute("aria-label")) {
+    var e = {type:"text"};
+    e.text = c.getAttribute("aria-label");
+    e.lastWord = axs.properties.getLastWord(e.text);
+    if(a) {
+      e.unused = !0
+    }else {
+      if(!d || !axs.utils.elementIsHtmlControl(c)) {
+        a = e.text
+      }
+    }
+    b.ariaLabel = e
+  }
+  if(!c.hasAttribute("role") || "presentation" != c.getAttribute("role")) {
+    a = axs.properties.getTextFromHostLangaugeAttributes(c, b, a)
+  }
+  if(d && axs.utils.elementIsHtmlControl(c)) {
+    if(c instanceof HTMLInputElement) {
+      var f = c;
+      "text" == f.type && f.value && 0 < f.value.length && (b.controlValue = {text:f.value});
+      "range" == f.type && (b.controlValue = {text:f.value})
+    }
+    c instanceof HTMLSelectElement && (b.controlValue = {text:f.value});
+    b.controlValue && (f = b.controlValue, a ? f.unused = !0 : a = f.text)
+  }
+  if(d && axs.utils.elementIsAriaWidget(c)) {
+    d = c.getAttribute("role");
+    "textbox" == d && c.textContent && 0 < c.textContent.length && (b.controlValue = {text:c.textContent});
+    if("slider" == d || "spinbutton" == d) {
+      c.hasAttribute("aria-valuetext") ? b.controlValue = {text:c.getAttribute("aria-valuetext")} : c.hasAttribute("aria-valuenow") && (b.controlValue = {value:c.getAttribute("aria-valuenow"), text:"" + c.getAttribute("aria-valuenow")})
+    }
+    if("menu" == d) {
+      for(var g = c.querySelectorAll("[role=menuitemcheckbox], [role=menuitemradio]"), f = [], e = 0;e < g.length;e++) {
+        "true" == g[e].getAttribute("aria-checked") && f.push(g[e])
+      }
+      if(0 < f.length) {
+        g = "";
+        for(e = 0;e < f.length;e++) {
+          g += axs.properties.findTextAlternatives(f[e], {}, !0), e < f.length - 1 && (g += ", ")
+        }
+        b.controlValue = {text:g}
+      }
+    }
+    if("combobox" == d || "select" == d) {
+      b.controlValue = {text:"TODO"}
+    }
+    b.controlValue && (f = b.controlValue, a ? f.unused = !0 : a = f.text)
+  }
+  if(d = axs.properties.getTextFromDescendantContent(c)) {
+    f = {type:"text"}, f.text = d, f.lastWord = axs.properties.getLastWord(f.text), a ? f.unused = !0 : a = d, b.content = f
+  }
+  c.hasAttribute("title") && (d = {type:"string", valid:!0}, d.text = c.getAttribute("title"), d.lastWord = axs.properties.getLastWord(d.lastWord), a ? d.unused = !0 : a = d.text, b.title = d);
+  return 0 == Object.keys(b).length && null == a ? null : a
+};
+axs.properties.getTextFromDescendantContent = function(a) {
+  if(a.hasAttribute("role")) {
+    var b = a.getAttribute("role");
+    if((b = axs.constants.ARIA_ROLES[b]) && (!b.namefrom || 0 > b.namefrom.indexOf("contents"))) {
+      return null
+    }
+  }
+  a = a.childNodes;
+  for(var b = [], c = 0;c < a.length;c++) {
+    var d = axs.properties.findTextAlternatives(a[c], {}, !0);
+    d && 0 < d.trim().length && b.push(d.trim())
+  }
+  return b.length ? b.join(" ") : null
+};
+axs.properties.getTextFromAriaLabelledby = function(a, b) {
+  var c = null;
+  if(!a.hasAttribute("aria-labelledby")) {
+    return c
+  }
+  for(var d = a.getAttribute("aria-labelledby").split(/\s+/), e = {valid:!0}, f = [], g = [], h = 0;h < d.length;h++) {
+    var j = {type:"element"}, k = d[h];
+    j.value = k;
+    var l = document.getElementById(k);
+    l ? (j.valid = !0, j.text = axs.properties.findTextAlternatives(l, {}, !0), j.lastWord = axs.properties.getLastWord(j.text), f.push(l.innerText.trim()), j.element = l) : (j.valid = !1, e.valid = !1, j.errorMessage = {messageKey:"noElementWithId", args:[k]});
+    g.push(j)
+  }
+  0 < g.length && (g[g.length - 1].last = !0, e.values = g, e.text = f.join(" "), e.lastWord = axs.properties.getLastWord(e.text), c = e.text, b.ariaLabelledby = e);
+  return c
+};
+axs.properties.getTextFromHostLangaugeAttributes = function(a, b, c) {
+  if(a.webkitMatchesSelector("img")) {
+    if(a.hasAttribute("alt")) {
+      var d = {type:"string", valid:!0};
+      d.text = a.getAttribute("alt");
+      c ? d.unused = !0 : c = d.text;
+      b.alt = d
+    }else {
+      d = {valid:!1, errorMessage:"No alt value provided"}, b.alt = d, d = a.src, "string" == typeof d && (c = d.split("/").pop(), b.filename = {text:c})
+    }
+  }
+  if(a.webkitMatchesSelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), video:not([disabled])')) {
+    if(a.hasAttribute("id")) {
+      for(var d = document.querySelectorAll("label[for=" + a.id + "]"), e = {}, f = [], g = [], h = 0;h < d.length;h++) {
+        var j = {type:"element"}, k = d[h], l = axs.properties.findTextAlternatives(k, {}, !0);
+        l && 0 < l.trim().length && (j.text = l.trim(), g.push(l.trim()));
+        j.element = k;
+        f.push(j)
+      }
+      0 < f.length && (f[f.length - 1].last = !0, e.values = f, e.text = g.join(" "), e.lastWord = axs.properties.getLastWord(e.text), c ? e.unused = !0 : c = e.text, b.labelFor = e)
+    }
+    d = a.parentElement;
+    for(e = {};d;) {
+      if("label" == d.tagName.toLowerCase() && (f = d, f.control == a)) {
+        e.type = "element";
+        e.text = axs.properties.findTextAlternatives(f, {}, !0);
+        e.lastWord = axs.properties.getLastWord(e.text);
+        e.element = f;
+        break
+      }
+      d = d.parentElement
+    }
+    e.text && (c ? e.unused = !0 : c = e.text, b.labelWrapped = e);
+    Object.keys(b).length || (b.noLabel = !0)
+  }
+  return c
+};
+axs.properties.getLastWord = function(a) {
+  if(!a) {
+    return null
+  }
+  var b = a.lastIndexOf(" ") + 1, c = a.length - 10;
+  return a.substring(b > c ? b : c)
+};
+axs.properties.getTextProperties = function(a) {
+  var b = {};
+  a = axs.properties.findTextAlternatives(a, b);
+  if(0 == Object.keys(b).length) {
+    if(!a) {
+      return null
+    }
+    b.hasProperties = !1
+  }else {
+    b.hasProperties = !0
+  }
+  b.computedText = a;
+  b.lastWord = axs.properties.getLastWord(a);
+  return b
+};
+axs.properties.getAriaProperties = function(a) {
+  console.log("getAriaProperties", a);
+  var b = {}, c = axs.properties.getGlobalAriaProperties(a), d;
+  for(d in axs.constants.ARIA_PROPERTIES) {
+    var e = "aria-" + d;
+    if(a.hasAttribute(e)) {
+      var f = a.getAttribute(e);
+      c[e] = axs.utils.getAriaPropertyValue(e, f, a)
+    }
+  }
+  console.log("statesAndProperties", c);
+  0 < Object.keys(c).length && (b.properties = axs.utils.values(c));
+  f = axs.utils.getRoles(a);
+  if(!f) {
+    return Object.keys(b).length ? b : null
+  }
+  b.roles = f;
+  if(!f.valid || !f.roles) {
+    return b
+  }
+  for(var e = f.roles, g = 0;g < e.length;g++) {
+    var h = e[g];
+    if(h.details && h.details.propertiesSet) {
+      for(d in h.details.propertiesSet) {
+        d in c || (a.hasAttribute(d) ? (f = a.getAttribute(d), c[d] = axs.utils.getAriaPropertyValue(d, f, a), "values" in c[d] && (f = c[d].values, f[f.length - 1].isLast = !0)) : h.details.requiredPropertiesSet[d] && (c[d] = {name:d, valid:!1, reason:"Required property not set"}))
+      }
+    }
+  }
+  0 < Object.keys(c).length && (b.properties = axs.utils.values(c));
+  return 0 < Object.keys(b).length ? b : null
+};
+axs.properties.getGlobalAriaProperties = function(a) {
+  for(var b = {}, c = 0;c < axs.constants.GLOBAL_PROPERTIES.length;c++) {
+    var d = axs.constants.GLOBAL_PROPERTIES[c];
+    if(a.hasAttribute(d)) {
+      var e = a.getAttribute(d);
+      b[d] = axs.utils.getAriaPropertyValue(d, e, a)
+    }
+  }
+  return b
+};
+axs.properties.getVideoProperties = function(a) {
+  if(!a.webkitMatchesSelector("video")) {
+    return null
+  }
+  var b = {};
+  b.captionTracks = axs.properties.getTrackElements(a, "captions");
+  b.descriptionTracks = axs.properties.getTrackElements(a, "descriptions");
+  b.chapterTracks = axs.properties.getTrackElements(a, "chapters");
+  return b
+};
+axs.properties.getTrackElements = function(a, b) {
+  var c = a.querySelectorAll("track[kind=" + b + "]"), d = {};
+  if(!c.length) {
+    return d.valid = !1, d.reason = {messageKey:"noTracksProvided", args:[[b]]}, d
+  }
+  d.valid = !0;
+  for(var e = [], f = 0;f < c.length;f++) {
+    var g = {}, h = c[f].getAttribute("src"), j = c[f].getAttribute("srcLang"), k = c[f].getAttribute("label");
+    h ? (g.valid = !0, g.src = h) : (g.valid = !1, g.reason = {messageKey:"noSrcProvided"});
+    h = "";
+    k && (h += k, j && (h += " "));
+    j && (h += "(" + j + ")");
+    "" == h && (h = "[[object Object]]");
+    g.name = h;
+    e.push(g)
+  }
+  d.values = e;
+  return d
+};
+axs.properties.getAllProperties = function(a) {
+  var b;
+  a.nodeType == Node.ELEMENT_NODE && (b = a);
+  a.nodeType == Node.TEXT_NODE && (b = a.parentElement);
+  if(!b) {
+    return{}
+  }
+  var c = {};
+  c.ariaProperties = axs.properties.getAriaProperties(b);
+  c.colorProperties = axs.properties.getColorProperties(b);
+  c.focusProperties = axs.properties.getFocusProperties(b);
+  c.textProperties = axs.properties.getTextProperties(a);
+  c.videoProperties = axs.properties.getVideoProperties(b);
+  return c
 };
 axs.AuditRule = function(a) {
   for(var b = !0, c = [], d = 0;d < axs.AuditRule.requiredFields.length;d++) {
@@ -625,7 +917,7 @@ axs.AuditRule.specs.badAriaAttributeValue = {name:"badAriaAttributeValue", headi
 axs.AuditRule.specs.badAriaRole = {name:"badAriaRole", heading:"Elements with ARIA roles must use a valid, non-abstract ARIA role", url:"https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules#AX_ARIA_01:_Elements_with_ARIA_roles_must_use_a_valid,_non-abstr", severity:axs.constants.Severity.SEVERE, relevantNodesSelector:function(a) {
   return a.querySelectorAll("[role]")
 }, test:function(a) {
-  return!axs.utils.getRole(a).valid
+  return!axs.utils.getRoles(a).valid
 }, code:"AX_ARIA_01"};
 axs.AuditRule.specs.controlsWithoutLabel = {name:"controlsWithoutLabel", heading:"Controls and media elements should have labels", url:"https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules#AX_TEXT_01:_Controls_and_media_elements_should_have_labels", severity:axs.constants.Severity.SEVERE, relevantNodesSelector:function(a) {
   return a.querySelectorAll('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), video:not([disabled])')
@@ -658,6 +950,11 @@ axs.AuditRule.specs.lowContrastElements = {name:"lowContrastElements", heading:"
   var b = window.getComputedStyle(a, null);
   return(a = axs.utils.getContrastRatioForElementWithComputedStyle(b, a)) && axs.utils.isLowContrast(a, b)
 }, code:"AX_COLOR_01"};
+axs.AuditRule.specs.mainRoleOnInappropriateElement = {name:"mainRoleOnInappropriateElement", heading:"role=main should only appear on significant elements", url:"", severity:axs.constants.Severity.WARNING, relevantNodesSelector:function(a) {
+  return a.querySelectorAll("[role~=main]")
+}, test:function(a) {
+  return axs.utils.isInlineElement(a) || 50 > axs.properties.findTextAlternatives(a, {}).length ? !0 : !1
+}, code:"AX_ARIA_04"};
 axs.AuditRule.specs.nonExistentAriaLabelledbyElement = {name:"nonExistentAriaLabelledbyElement", heading:"aria-labelledby attributes should refer to an element which exists in the DOM", url:"https://code.google.com/p/accessibility-developer-tools/wiki/AuditRules#AX_ARIA_02:__aria-labelledby_attributes_should_refer_to_an_eleme", severity:axs.constants.Severity.WARNING, relevantNodesSelector:function(a) {
   return a.querySelectorAll("[aria-labelledby]")
 }, test:function(a) {
@@ -682,18 +979,16 @@ axs.AuditRule.specs.pageWithoutTitle = {name:"pageWithoutTitle", heading:"Web pa
 axs.AuditRule.specs.requiredAriaAttributeMissing = {name:"requiredAriaAttributeMissing", heading:"Elements with ARIA roles must have all required attributes for that role", url:"", severity:axs.constants.Severity.SEVERE, relevantNodesSelector:function(a) {
   return a.querySelectorAll("[role]")
 }, test:function(a) {
-  var b = axs.utils.getRole(a);
+  var b = axs.utils.getRoles(a);
   if(!b.valid) {
     return!1
   }
-  var b = b.details.requiredPropertiesSet, c;
-  for(c in b) {
-    b = c.replace(/^aria-/, "");
-    if("defaultValue" in axs.constants.ARIA_PROPERTIES[b]) {
-      return!1
-    }
-    if(!a.hasAttribute(c)) {
-      return!0
+  for(var c = 0;c < b.roles.length;c++) {
+    var d = b.roles[c].details.requiredPropertiesSet, e;
+    for(e in d) {
+      if(d = e.replace(/^aria-/, ""), !("defaultValue" in axs.constants.ARIA_PROPERTIES[d]) && !a.hasAttribute(e)) {
+        return!0
+      }
     }
   }
 }, code:"AX_ARIA_03"};

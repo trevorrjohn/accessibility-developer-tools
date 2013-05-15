@@ -18,15 +18,15 @@ console.log = function(vararg) { };
 /** @param {...*} vararg */
 console.warn = function(vararg) { };
 
-/** @param {Element} element */
-var getEventListeners = function(element) { };
-
 var JSON = { };
 /**
- * @param {Object} o
+ * @param {Object} object
  * @return {string}
  */
-JSON.stringify = function(o) { };
+JSON.stringify = function(object) { };
+
+/** @param {Element} element */
+var getEventListeners = function(element) { };
 
 /**
  * @type {Element}
