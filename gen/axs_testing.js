@@ -98,6 +98,26 @@ axs.utils.calculateContrastRatio = function(a, b) {
   var c = axs.utils.calculateLuminance(a), d = axs.utils.calculateLuminance(b);
   return(Math.max(c, d) + 0.05) / (Math.min(c, d) + 0.05)
 };
+axs.utils.luminanceRatio = function(a, b) {
+  return(Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+};
+axs.utils.asElement = function(a) {
+  switch(a.nodeType) {
+    case Node.COMMENT_NODE:
+      return null;
+    case Node.ELEMENT_NODE:
+      if("script" == a.tagName.toLowerCase()) {
+        return null
+      }
+      break;
+    case Node.TEXT_NODE:
+      a = a.parentElement;
+      break;
+    default:
+      return console.warn("Unhandled node type: ", a.nodeType), null
+  }
+  return a
+};
 axs.utils.elementIsTransparent = function(a) {
   return"0" == a.style.opacity
 };
@@ -149,7 +169,13 @@ axs.utils.isLargeFont = function(a) {
   a = "bold" == a.fontWeight;
   var c = b.match(/(\d+)px/);
   if(c) {
-    return b = parseInt(c[1], 10), a && 19.2 <= b || 24 <= b ? !0 : !1
+    b = parseInt(c[1], 10);
+    if(c = window.getComputedStyle(document.body, null).fontSize.match(/(\d+)px/)) {
+      var d = parseInt(c[1], 10), c = 1.2 * d, d = 1.5 * d
+    }else {
+      c = 19.2, d = 24
+    }
+    return a && b >= c || b >= d
   }
   if(c = b.match(/(\d+)em/)) {
     return b = parseInt(c[1], 10), a && 1.2 <= b || 1.5 <= b ? !0 : !1
@@ -211,43 +237,47 @@ axs.utils.parseColor = function(a) {
   }
   return(b = a.match(/^rgba\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)/)) ? (d = parseInt(b[4], 10), a = parseInt(b[1], 10), c = parseInt(b[2], 10), b = parseInt(b[3], 10), new axs.utils.Color(a, c, b, d)) : null
 };
+axs.utils.colorChannelToString = function(a) {
+  return 15 >= a ? "0" + a.toString(16) : a.toString(16)
+};
 axs.utils.colorToString = function(a) {
-  return 1 == a.alpha ? "#" + a.red.toString(16) + a.green.toString(16) + a.blue.toString(16) : "rgba(" + [a.red, a.green, a.blue, a.alpha].join() + ")"
+  return 1 == a.alpha ? "#" + axs.utils.colorChannelToString(a.red) + axs.utils.colorChannelToString(a.green) + axs.utils.colorChannelToString(a.blue) : "rgba(" + [a.red, a.green, a.blue, a.alpha].join() + ")"
+};
+axs.utils.luminanceFromContrastRatio = function(a, b, c) {
+  return c ? (a + 0.05) * b - 0.05 : (a + 0.05) / b - 0.05
+};
+axs.utils.translateColor = function(a, b) {
+  var c = a[0], c = (b - c) / ((c > b ? 0 : 1) - c);
+  return axs.utils.fromYCC([b, a[1] - a[1] * c, a[2] - a[2] * c])
 };
 axs.utils.suggestColors = function(a, b, c, d) {
-  if(!axs.utils.isLowContrast(c, d)) {
+  if(!axs.utils.isLowContrast(c, d, !0)) {
     return null
   }
-  c = {};
-  var e = axs.utils.calculateLuminance(a), f = axs.utils.calculateLuminance(b), g = axs.utils.isLargeFont(d) ? 3 : 4.5, h = axs.utils.isLargeFont(d) ? 4.5 : 7;
-  e > f ? (d = (e + 0.05) / g - 0.05, e = (e + 0.05) / h - 0.05, g = g * (f + 0.05) - 0.05, f = h * (f + 0.05) - 0.05) : (d = g * (e + 0.05) - 0.05, e = h * (e + 0.05) - 0.05, g = (f + 0.05) / g - 0.05, f = (f + 0.05) / h - 0.05);
-  h = axs.utils.toYCC(b);
-  if(21 >= d && 0 <= d) {
-    var j = [d, h[1], h[2]];
-    d = axs.utils.fromYCC(j);
-    255 >= d.red && (255 >= d.green && 255 >= d.blue && 0 <= d.red && 0 <= d.green && 0 <= d.blue) && (c.suggestedFgAA = axs.utils.colorToString(d), c.suggestedBgAA = axs.utils.colorToString(a))
+  var e = {}, f = axs.utils.calculateLuminance(a), g = axs.utils.calculateLuminance(b), h = axs.utils.isLargeFont(d) ? 3 : 4.5, j = axs.utils.isLargeFont(d) ? 4.5 : 7, m = g > f, k = axs.utils.luminanceFromContrastRatio(f, h + 0.02, m), l = axs.utils.luminanceFromContrastRatio(f, j + 0.02, m), p = axs.utils.toYCC(b);
+  if(axs.utils.isLowContrast(c, d, !1) && 1 >= k && 0 <= k) {
+    var n = axs.utils.translateColor(p, k), k = axs.utils.calculateContrastRatio(n, a);
+    axs.utils.calculateLuminance(n);
+    f = {};
+    f.fg = axs.utils.colorToString(n);
+    f.bg = axs.utils.colorToString(a);
+    f.contrast = k.toFixed(2);
+    e.AA = f
   }
-  if(21 >= e && 0 <= e) {
-    var k = [e, h[1], h[2]];
-    d = axs.utils.fromYCC(k);
-    255 >= d.red && (255 >= d.green && 255 >= d.blue && 0 <= d.red && 0 <= d.green && 0 <= d.blue) && (c.suggestedFgAAA = axs.utils.colorToString(d), c.suggestedBgAAA = axs.utils.colorToString(a))
-  }
-  axs.utils.toYCC(a);
-  !c.suggestedFgAA && (21 >= g && 0 <= g) && (a = axs.utils.fromYCC(j), 255 >= a.red && (255 >= a.green && 255 >= a.blue && 0 <= a.red && 0 <= a.green && 0 <= a.blue) && (c.suggestedBgAA = axs.utils.colorToString(a), c.suggestedFgAA = axs.utils.colorToString(b)));
-  !c.suggestedFgAAA && (21 >= f && 0 <= f) && (k = axs.utils.fromYCC(k), 255 >= k.red && (255 >= k.green && 255 >= k.blue && 0 <= k.red && 0 >= k.green && 0 <= k.blue) && (c.suggestedBgAAA = axs.utils.colorToString(k), c.suggestedFgAAA = axs.utils.colorToString(b)));
-  return c
+  axs.utils.isLowContrast(c, d, !0) && (1 >= l && 0 <= l) && (l = axs.utils.translateColor(p, l), k = axs.utils.calculateContrastRatio(l, a), f = {}, f.fg = axs.utils.colorToString(l), f.bg = axs.utils.colorToString(a), f.contrast = k.toFixed(2), e.AAA = f);
+  h = axs.utils.luminanceFromContrastRatio(g, h + 0.02, !m);
+  g = axs.utils.luminanceFromContrastRatio(g, j + 0.02, !m);
+  a = axs.utils.toYCC(a);
+  !("AA" in e) && (axs.utils.isLowContrast(c, d, !1) && 1 >= h && 0 <= h) && (j = axs.utils.translateColor(a, h), k = axs.utils.calculateContrastRatio(b, j), f = {}, f.bg = axs.utils.colorToString(j), f.fg = axs.utils.colorToString(b), f.contrast = k.toFixed(2), e.AA = f);
+  !("AAA" in e) && (axs.utils.isLowContrast(c, d, !0) && 1 >= g && 0 <= g) && (c = axs.utils.translateColor(a, g), k = axs.utils.calculateContrastRatio(b, c), f = {}, f.bg = axs.utils.colorToString(c), f.fg = axs.utils.colorToString(b), f.contrast = k.toFixed(2), e.AAA = f);
+  return e
 };
 axs.utils.flattenColors = function(a, b) {
   var c = a.alpha;
   return new axs.utils.Color((1 - c) * b.red + c * a.red, (1 - c) * b.green + c * a.green, (1 - c) * b.blue + c * a.blue, 1)
 };
 axs.utils.calculateLuminance = function(a) {
-  var b = a.red / 255, c = a.green / 255;
-  a = a.blue / 255;
-  b = 0.03928 >= b ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
-  c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
-  return 0.2126 * b + 0.7152 * c + 0.0722 * a
+  return axs.utils.toYCC(a)[0]
 };
 axs.utils.RGBToYCCMatrix = function(a, b) {
   return[[a, 1 - a - b, b], [-a / (2 - 2 * b), (a + b - 1) / (2 - 2 * b), (1 - b) / (2 - 2 * b)], [(1 - a) / (2 - 2 * a), (a + b - 1) / (2 - 2 * a), -b / (2 - 2 * a)]]
@@ -265,6 +295,10 @@ axs.utils.scalarMultiplyMatrix = function(a, b) {
   }
   return c
 };
+axs.utils.kR = 0.2126;
+axs.utils.kB = 0.0722;
+axs.utils.YCC_MATRIX = axs.utils.RGBToYCCMatrix(axs.utils.kR, axs.utils.kB);
+axs.utils.INVERTED_YCC_MATRIX = axs.utils.invert3x3Matrix(axs.utils.YCC_MATRIX);
 axs.utils.convertColor = function(a, b) {
   var c = b[0], d = b[1], e = b[2];
   return[a[0][0] * c + a[0][1] * d + a[0][2] * e, a[1][0] * c + a[1][1] * d + a[1][2] * e, a[2][0] * c + a[2][1] * d + a[2][2] * e]
@@ -283,18 +317,18 @@ axs.utils.toYCC = function(a) {
   b = 0.03928 >= b ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
   c = 0.03928 >= c ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   a = 0.03928 >= a ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
-  return axs.utils.convertColor(axs.utils.RGBToYCCMatrix(0.2126, 0.0722), [b, c, a])
+  return axs.utils.convertColor(axs.utils.YCC_MATRIX, [b, c, a])
 };
 axs.utils.fromYCC = function(a) {
-  var b = axs.utils.invert3x3Matrix(axs.utils.RGBToYCCMatrix(0.2126, 0.0722)), b = axs.utils.convertColor(b, a), c = b[0];
+  var b = axs.utils.convertColor(axs.utils.INVERTED_YCC_MATRIX, a), c = b[0];
   a = b[1];
   b = b[2];
   c = 0.00303949 >= c ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
   a = 0.00303949 >= a ? 12.92 * a : 1.055 * Math.pow(a, 1 / 2.4) - 0.055;
   b = 0.00303949 >= b ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.055;
-  c = Math.round(255 * c);
-  a = Math.round(255 * a);
-  b = Math.round(255 * b);
+  c = Math.min(Math.max(Math.round(255 * c), 0), 255);
+  a = Math.min(Math.max(Math.round(255 * a), 0), 255);
+  b = Math.min(Math.max(Math.round(255 * b), 0), 255);
   return new axs.utils.Color(c, a, b, 1)
 };
 axs.utils.getContrastRatioForElement = function(a) {
@@ -342,8 +376,8 @@ axs.utils.isNativeTextElement = function(a) {
       return!1
   }
 };
-axs.utils.isLowContrast = function(a, b) {
-  return 3 > a || !axs.utils.isLargeFont(b) && 4.5 > a
+axs.utils.isLowContrast = function(a, b, c) {
+  return c ? 4.5 > a || !axs.utils.isLargeFont(b) && 7 > a : 3 > a || !axs.utils.isLargeFont(b) && 4.5 > a
 };
 axs.utils.hasLabel = function(a) {
   var b = a.tagName.toLowerCase(), c = a.type ? a.type.toLowerCase() : "";
