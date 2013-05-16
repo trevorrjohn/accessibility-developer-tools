@@ -37,5 +37,5 @@ axs.AuditRule.specs.mainRoleOnInappropriateElement = {
 
         return false;
     },
-    code: 'AX_ARIA_04'
+    code: 'AX_ARIA_05'
 };
