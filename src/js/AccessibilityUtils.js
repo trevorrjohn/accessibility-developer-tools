@@ -170,7 +170,8 @@ axs.utils.overlappingElement = function(element) {
     }
 
     if (element_at_point != null && element_at_point != element &&
-        !isAncestor(element_at_point, element)) {
+        !isAncestor(element_at_point, element) &&
+        !isAncestor(element, element_at_point)) {
         return element_at_point;
     }
 

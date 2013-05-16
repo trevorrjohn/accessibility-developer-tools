@@ -32,7 +32,7 @@ axs.AuditRule.specs.mainRoleOnInappropriateElement = {
         if (axs.utils.isInlineElement(element))
             return true;
         var computedTextContent = axs.properties.findTextAlternatives(element, {});
-        if (computedTextContent.length < 50)
+        if (computedTextContent && computedTextContent.length < 50)
             return true;
 
         return false;

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+goog.require('axs.content');
 goog.require('axs.utils');
 
 goog.provide('axs.properties');
@@ -40,8 +41,10 @@ axs.properties.getFocusProperties = function(element) {
  */
 axs.properties.getColorProperties = function(element) {
     var colorProperties = {};
-    colorProperties['contrastRatio'] = axs.properties.getContrastRatioProperties(element);
-    if (!colorProperties['contrastRatio'])  // FIXME this is awful
+    var contrastRatio = axs.properties.getContrastRatioProperties(element);
+    if (contrastRatio != null)
+        colorProperties['contrastRatio'] = contrastRatio;
+    if (Object.keys(colorProperties).length == 0)
         return null;
     return colorProperties;
 };
@@ -605,6 +608,30 @@ axs.properties.getTrackElements = function(element, kind) {
     return result;
 };
 
+axs.properties.getVisibilityProperties = function(element) {
+    if (axs.utils.isElementHidden(element))
+        return null;
+
+    var visibilityProperties = {};
+    var overlappingElement = axs.utils.overlappingElement(element);
+    if (overlappingElement) {
+        visibilityProperties['overlappingElement'] =
+            { 'nodeId': axs.content.convertNodeToResult(overlappingElement) };
+    }
+    var offscreen = axs.utils.elementIsOutsideScrollArea(element);
+    if (offscreen)
+        visibilityProperties['offscreen'] = true;
+    var transparent = axs.utils.elementIsTransparent(element);
+    if (transparent)
+        visibilityProperties['transparent'] = true;
+    var zeroArea = axs.utils.elementHasZeroArea(element);
+    if (zeroArea)
+        visibilityProperties['zeroArea'] = true;
+    if (Object.keys(visibilityProperties).length > 0)
+        return visibilityProperties;
+    return null;
+}
+
 /**
  * @param {Node} node
  * @return {Object.<string, Object>}
@@ -620,5 +647,7 @@ axs.properties.getAllProperties = function(node) {
     allProperties['focusProperties'] = axs.properties.getFocusProperties(element);
     allProperties['textProperties'] = axs.properties.getTextProperties(node);
     allProperties['videoProperties'] = axs.properties.getVideoProperties(element);
+    allProperties['visibilityProperties'] = axs.properties.getVisibilityProperties(element);
     return allProperties;
 };
+
