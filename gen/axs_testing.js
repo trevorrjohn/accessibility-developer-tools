@@ -331,22 +331,6 @@ axs.utils.fromYCC = function(a) {
   b = Math.min(Math.max(Math.round(255 * b), 0), 255);
   return new axs.utils.Color(c, a, b, 1)
 };
-axs.utils.scalarMultiplyMatrix = function(a, b) {
-  for(var c = [[], [], []], d = 0;3 > d;d++) {
-    for(var e = 0;3 > e;e++) {
-      c[d][e] = a[d][e] * b
-    }
-  }
-  return c
-};
-axs.utils.multiplyMatrices = function(a, b) {
-  for(var c = [[], [], []], d = 0;3 > d;d++) {
-    for(var e = 0;3 > e;e++) {
-      c[d][e] = a[d][0] * b[0][e] + a[d][1] * b[1][e] + a[d][2] * b[2][e]
-    }
-  }
-  return c
-};
 axs.utils.getContrastRatioForElement = function(a) {
   var b = window.getComputedStyle(a, null);
   return axs.utils.getContrastRatioForElementWithComputedStyle(b, a)

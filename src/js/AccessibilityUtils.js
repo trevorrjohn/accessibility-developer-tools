@@ -72,6 +72,12 @@ axs.utils.calculateContrastRatio = function(fgColor, bgColor) {
     return contrastRatio;
 };
 
+/**
+ * Calculate the luminance ratio between two luminances.
+ * @param {number} luminance1
+ * @param {number} luminance2
+ * @return {number}
+ */
 axs.utils.luminanceRatio = function(luminance1, luminance2) {
     return (Math.max(luminance1, luminance2) + 0.05) /
         (Math.min(luminance1, luminance2) + 0.05);
@@ -401,6 +407,15 @@ axs.utils.colorToString = function(color) {
         return 'rgba(' + [color.red, color.green, color.blue, color.alpha].join(',') + ')';
 };
 
+/**
+ * Given a luminance value and a desired contrast ratio, calculate a second
+ * luminance value which would have the desired contrast ratio with the original
+ * luminance.
+ * @param {number} luminance
+ * @param {number} contrast The desired contrast ratio
+ * @param {boolean} higher Whether the new luminance should be higher than the
+ *     original one.
+ */
 axs.utils.luminanceFromContrastRatio = function(luminance, contrast, higher) {
     if (higher) {
         var newLuminance = (luminance + 0.05) * contrast - 0.05;
@@ -411,6 +426,13 @@ axs.utils.luminanceFromContrastRatio = function(luminance, contrast, higher) {
     }
 };
 
+/**
+ * Given a color in YCC form and a desired luminance, translate the color to have
+ * the desired luminance.
+ * @param {Array.<number>} ycc
+ * @param {number} luminance
+ * @return {axs.utils.Color} The translated color in RGB form.
+ */
 axs.utils.translateColor = function(ycc, luminance) {
     var oldLuminance = ycc[0];
     if (oldLuminance > luminance)
@@ -520,15 +542,6 @@ axs.utils.flattenColors = function(fgColor, bgColor) {
  * @return {number}
  */
 axs.utils.calculateLuminance = function(color) {
-/*    var rSRGB = color.red / 255;
-    var gSRGB = color.green / 255;
-    var bSRGB = color.blue / 255;
-
-    var r = rSRGB <= 0.03928 ? rSRGB / 12.92 : Math.pow(((rSRGB + 0.055)/1.055), 2.4);
-    var g = gSRGB <= 0.03928 ? gSRGB / 12.92 : Math.pow(((gSRGB + 0.055)/1.055), 2.4);
-    var b = bSRGB <= 0.03928 ? bSRGB / 12.92 : Math.pow(((bSRGB + 0.055)/1.055), 2.4);
-
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b; */
     var ycc = axs.utils.toYCC(color);
     return ycc[0];
 };
@@ -595,6 +608,11 @@ axs.utils.invert3x3Matrix = function(matrix) {
     ], z);
 };
 
+/**
+ * @param {Array.<Array.<number>>} matrix
+ * @param {number} scalar
+ * @return {Array.<Array.<number>>}
+ */
 axs.utils.scalarMultiplyMatrix = function(matrix, scalar) {
     var result = [];
     result[0] = [];
@@ -643,6 +661,11 @@ axs.utils.convertColor = function(matrix, vector) {
     ];
 };
 
+/**
+ * @param {Array.<Array.<number>>} matrix1
+ * @param {Array.<Array.<number>>} matrix2
+ * @return {Array.<Array.<number>>}
+ */
 axs.utils.multiplyMatrices = function(matrix1, matrix2) {
     var result = [];
     result[0] = [];
@@ -661,6 +684,8 @@ axs.utils.multiplyMatrices = function(matrix1, matrix2) {
 
 /**
  * Convert a given RGB color to YCC.
+ * @param {axs.utils.Color} color
+ * @return {Array.<number>}
  */
 axs.utils.toYCC = function(color) {
     var rSRGB = color.red / 255;
@@ -695,37 +720,6 @@ axs.utils.fromYCC = function(yccColor) {
 
     return new axs.utils.Color(red, green, blue, 1);
 };
-
-axs.utils.scalarMultiplyMatrix = function(matrix, scalar) {
-    var result = [];
-    result[0] = [];
-    result[1] = [];
-    result[2] = [];
-
-    for (var i = 0; i < 3; i++) {
-        for (var j = 0; j < 3; j++) {
-            result[i][j] = matrix[i][j] * scalar;
-        }
-    }
-
-    return result;
-}
-
-axs.utils.multiplyMatrices = function(matrix1, matrix2) {
-    var result = [];
-    result[0] = [];
-    result[1] = [];
-    result[2] = [];
-
-    for (var i = 0; i < 3; i++) {
-        for (var j = 0; j < 3; j++) {
-            result[i][j] = matrix1[i][0] * matrix2[0][j] +
-                           matrix1[i][1] * matrix2[1][j] +
-                           matrix1[i][2] * matrix2[2][j];
-        }
-    }
-    return result;
-}
 
 /**
  * @param {Element} element
